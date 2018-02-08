@@ -21,7 +21,7 @@ PG:
 *   List available blocks in PLC (tested)
 *   Set/Clear password for session
 *   Get CPU protection and CPU Order code
-*   Get CPU/CP Information
+*   Get CPU/CP Information (tested)
 *   Read/Write clock for the PLC
 Helpers:
 *   Get/set value for a byte array for types: value(bit/int/word/dword/uint...), real, time, counter

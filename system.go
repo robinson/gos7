@@ -6,6 +6,7 @@ package gos7
 import (
 	"encoding/binary"
 	"fmt"
+	"strings"
 )
 
 //SZLHeader See §33.1 of "System Software for S7-300/400 System and Standard Functions" and see SFC51 description too
@@ -65,11 +66,17 @@ func (mb *client) GetCPUInfo() (info S7CpuInfo, err error) {
 
 	szl, _, err := mb.readSzl(0x001C, 0x000)
 	if err == nil {
-		info.ModuleTypeName = string(szl.Data[172 : 172+32])
-		info.SerialNumber = string(szl.Data[138 : 138+24])
-		info.ASName = string(szl.Data[2 : 2+24])
-		info.Copyright = string(szl.Data[104 : 104+26])
-		info.ModuleName = string(szl.Data[36 : 36+24])
+		moduleTypeName := string(szl.Data[172 : 172+32])
+		serialNumber := string(szl.Data[138 : 138+24])
+		asName := string(szl.Data[2 : 2+24])
+		copyRight := string(szl.Data[104 : 104+26])
+		moduleName := string(szl.Data[36 : 36+24])
+
+		info.ModuleTypeName = strings.TrimSpace(moduleTypeName)
+		info.SerialNumber = strings.TrimSpace(serialNumber)
+		info.ASName = strings.TrimSpace(asName)
+		info.Copyright = strings.TrimSpace(copyRight)
+		info.ModuleName = strings.TrimSpace(moduleName)
 	}
 	return
 }
@@ -106,8 +113,8 @@ func (mb *client) readSzl(id int, index int) (szl S7SZL, size int, err error) {
 	first := true
 	var seqIn byte = 0x00
 	var seqOut uint16 = 0x0000
-	szl = S7SZL{}
-	szl.Header.LengthHeader = 0
+	// szl = S7SZL{	}
+	// szl.Header.LengthHeader = 0
 	s7SZLFirst := make([]byte, len(s7SZLFirstTelegram))
 	copy(s7SZLFirst, s7SZLFirstTelegram)
 	s7SZLNext := make([]byte, len(s7SZLNextTelegram))
@@ -141,12 +148,19 @@ func (mb *client) readSzl(id int, index int) (szl S7SZL, size int, err error) {
 		}
 		if first {
 			// Gets Amount of this slice
-			dataSZL = int(binary.BigEndian.Uint16(res.Data[31:]) - 8) // Skips extra params (ID, Index ...)
+			dataSZL = int(binary.BigEndian.Uint16(res.Data[31:])) - 8 // Skips extra params (ID, Index ...)
 			done = res.Data[26] == 0x00
 			seqIn = byte(res.Data[24]) // Slice sequence
-			szl.Header.LengthHeader = binary.BigEndian.Uint16(res.Data[37:])
-			szl.Header.NumberOfDataRecord = binary.BigEndian.Uint16(res.Data[39:])
-			copy(szl.Data[offset:offset+dataSZL], res.Data[41:41+dataSZL])
+			//header
+			header := SZLHeader{}
+			header.LengthHeader = binary.BigEndian.Uint16(res.Data[37:])
+			header.NumberOfDataRecord = binary.BigEndian.Uint16(res.Data[39:])
+			//data
+			data := make([]byte, offset+dataSZL)
+			copy(data[offset:offset+dataSZL], res.Data[41:41+dataSZL])
+			//s7szl
+			szl.Header = header
+			szl.Data = data
 
 			offset += dataSZL
 			szl.Header.LengthHeader += szl.Header.LengthHeader
@@ -154,6 +168,9 @@ func (mb *client) readSzl(id int, index int) (szl S7SZL, size int, err error) {
 			dataSZL = int(binary.BigEndian.Uint16(res.Data[31:]))
 			done = res.Data[26] == 0x00
 			seqIn = byte(res.Data[24]) // Slice sequence
+			data := make([]byte, offset+dataSZL)
+			szl.Data = data
+
 			copy(szl.Data[offset:offset+dataSZL], res.Data[37:37+dataSZL])
 			offset += dataSZL
 			szl.Header.LengthHeader += szl.Header.LengthHeader

@@ -21,6 +21,8 @@ func ClientTestAll(t *testing.T, client gos7.Client) {
 	ClientTestWriteIntDB(t, client, 0)
 	//test directory
 	ClientTestDirectory(t, client)
+	//Get CPU info
+	ClientTestGetCPUInfo(t, client)
 }
 
 //ClientTestWriteIntDB client test write int
@@ -68,6 +70,15 @@ func ClientTestDirectory(t *testing.T, client gos7.Client) {
 	AssertEquals(t, len(bl.OBList), 10)
 	AssertEquals(t, len(bl.DBList), 113)
 	AssertEquals(t, len(bl.FBList), 81)
+}
+
+//ClientTestGetCPUInfo get the CPU info
+func ClientTestGetCPUInfo(t *testing.T, client gos7.Client) {
+	info, err := client.GetCPUInfo()
+	if err != nil {
+		t.Fatal(err)
+	}
+	AssertEquals(t, strings.Index(info.SerialNumber, "0118701484"), 0) //return serial should be "0118701484        ", some space
 }
 
 //AssertEquals helper

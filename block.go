@@ -32,7 +32,7 @@ type S7BlockInfo struct {
 
 func (mb *client) DBFill(dbnumber int, fillChar int) (err error) {
 	bi := S7BlockInfo{}
-	err = mb.getAgBlockInfo(blockDB, dbnumber, &bi)
+	err = mb.GetAgBlockInfo(blockDB, dbnumber, &bi)
 	if err == nil {
 		buffer := make([]byte, bi.MC7Size)
 		for c := 0; c < bi.MC7Size; c++ {
@@ -45,7 +45,7 @@ func (mb *client) DBFill(dbnumber int, fillChar int) (err error) {
 
 func (mb *client) DBGet(dbnumber int, usrdata []byte, size int) (err error) {
 	bi := S7BlockInfo{}
-	err = mb.getAgBlockInfo(blockDB, dbnumber, &bi)
+	err = mb.GetAgBlockInfo(blockDB, dbnumber, &bi)
 	if err == nil {
 		if dbSize := bi.MC7Size; dbSize <= len(usrdata) {
 			size = dbSize
@@ -63,8 +63,7 @@ func (mb *client) DBGet(dbnumber int, usrdata []byte, size int) (err error) {
 //internal class returns info about a given block in PLC memory.
 //This function is very useful if you need to read or write data in a DB
 //which you do not know the size in advance ( MC7Size).
-//This function is used internally by DBGet.
-func (mb *client) getAgBlockInfo(blocktype int, blocknum int, info *S7BlockInfo) (err error) {
+func (mb *client) GetAgBlockInfo(blocktype int, blocknum int, info *S7BlockInfo) (err error) {
 	//init buffer
 	requestData := make([]byte, len(s7BlockInfoTelegram))
 	copy(requestData, s7BlockInfoTelegram)

@@ -25,8 +25,6 @@ func TestTCPClient(t *testing.T) {
 	handler.Logger = log.New(os.Stdout, "tcp: ", log.LstdFlags)
 	handler.Connect()
 	defer handler.Close()
-
 	client := gos7.NewClient(handler)
-
 	ClientTestAll(t, client)
 }

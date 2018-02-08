@@ -275,4 +275,16 @@ var s7BlockInfoTelegram = []byte{
 	65}
 
 //s7 pg block list telegram, require type to the end
-var s7PGBlockListTelegram = []byte{3, 0, 0, 31, 2, 240, 128, 50, 7, 0, 0, 0, 0, 0, 8, 0, 6, 0, 1, 18, 4, 17, 67, 2, 0, 255, 9, 0, 2, 48}
+var s7PGBlockListTelegram = []byte{
+	3, 0, 0, 31,
+	2, 240, 128, 50,
+	7, 0, 0, 5, 0, 0, 8, 0,
+	6, 0, 1, 18, 4, 17, 67,
+	2, 0, 255, 9, 0, 2, 48}
+
+// var s7PGBlockListTelegram = []byte{
+// 	3, 0, 0, 31,
+// 	2, 240, 128, 50,
+// 	7, 0, 0, 0, 0, 0, 8, 0,
+// 	6, 0, 1, 18, 4, 17, 67,
+// 	2, 0, 255, 9, 0, 2, 48}

@@ -14,11 +14,11 @@ import (
 //ClientTestAll client test all
 func ClientTestAll(t *testing.T, client gos7.Client) {
 	//write value to 100
-	// ClientTestWriteIntDB(t, client, 100)
+	ClientTestWriteIntDB(t, client, 100)
 	//read and assert with 100
-	// ClientTestReadIntDB(t, client)
+	ClientTestReadIntDB(t, client)
 	//return 0
-	// ClientTestWriteIntDB(t, client, 0)
+	ClientTestWriteIntDB(t, client, 0)
 	//test directory
 	ClientTestDirectory(t, client)
 }
@@ -57,14 +57,17 @@ func ClientTestReadIntDB(t *testing.T, client gos7.Client) {
 	AssertEquals(t, 100, int(result))
 }
 
-//ClientTestDirectory test directory functions
+//ClientTestDirectory test directory functions, list all blocks
 func ClientTestDirectory(t *testing.T, client gos7.Client) {
 	//var bl gos7.S7BlocksList
 	bl, err := client.PGListBlocks()
 	if err != nil {
 		t.Fatal(err)
 	}
-	AssertEquals(t, len(bl.DBList), 50)
+	//for example
+	AssertEquals(t, len(bl.OBList), 10)
+	AssertEquals(t, len(bl.DBList), 113)
+	AssertEquals(t, len(bl.FBList), 81)
 }
 
 //AssertEquals helper

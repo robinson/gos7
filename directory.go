@@ -1,5 +1,9 @@
 package gos7
 
+import (
+	"fmt"
+)
+
 // Copyright 2018 Trung Hieu Le. All rights reserved.
 // This software may be modified and distributed under the terms
 // of the BSD license. See the LICENSE file for details.
@@ -27,8 +31,11 @@ type S7BlocksList struct {
 
 //implement list block
 func (mb *client) PGListBlocks() (list S7BlocksList, err error) {
-	list.FCList, err = mb.pgBlockList(blockFC)
+	list.OBList, err = mb.pgBlockList(blockOB)
+	//debug
+	fmt.Printf("%v", list.DBList)
 	list.DBList, err = mb.pgBlockList(blockDB)
+	list.FCList, err = mb.pgBlockList(blockFC)
 	list.OBList, err = mb.pgBlockList(blockOB)
 	list.FBList, err = mb.pgBlockList(blockFB)
 	list.SDBList, err = mb.pgBlockList(blockSDB)
@@ -63,13 +70,15 @@ func (mb *client) pgBlockList(blockType byte) (arr []int, err error) {
 	//send
 	response, err := mb.send(&request)
 	if err == nil {
-		arr = dataToBlocks(response.Data)
+		res := make([]byte, len(response.Data)-33) //remove first 26 byte function and 7 byte header
+		copy(res, response.Data[33:len(response.Data)])
+		arr = dataToBlocks(res)
 	}
 	return
 }
 func dataToBlocks(data []byte) []int {
 	arr := make([]int, len(data)/4)
-	for i := 0; i <= len(arr)/4-1; i++ {
+	for i := 0; i <= len(data)/4-1; i++ {
 		arr[i] = int(data[i*4])*256 + int(data[i*4+1])
 	}
 	return arr

@@ -116,8 +116,7 @@ func (mb *tcpTransporter) Send(request []byte) (response []byte, err error) {
 		return
 	}
 	done := false
-	var data [tcpMaxLength]byte
-
+	data := make([]byte, tcpMaxLength)
 	length := 0
 	for !done && err == nil {
 		// Get TPKT (4 bytes)
@@ -147,7 +146,7 @@ func (mb *tcpTransporter) Send(request []byte) (response []byte, err error) {
 	}
 	mb.LastPDUType = data[5] // Stores PDU Type, we need it
 	// Receives the S7 Payload
-	_, err = io.ReadFull(mb.conn, data[isoHSize:length])
+	_, err = io.ReadFull(mb.conn, data[7:length])
 	if err != nil {
 		return
 	}

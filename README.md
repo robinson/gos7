@@ -8,17 +8,17 @@ Since years, there are tons of driver/connector in both commercial and open sour
 Functions
 -------------------
 AG:
-*   Read/Write Data Block (DB)
-*   Read/Write Merkers(MB)
-*   Read/Write IPI (EB)
-*   Read/Write IPU (AB)
-*   Read/Write Timer (TM)   
-*   Read/Write Counter (CT)
+*   Read/Write Data Block (DB) (tested)
+*   Read/Write Merkers(MB) (tested)
+*   Read/Write IPI (EB) (tested)
+*   Read/Write IPU (AB) (tested)
+*   Read/Write Timer (TM)  (tested)
+*   Read/Write Counter (CT) (tested)
 *   Multiple Read/Write Area
 PG:
 *   Hot start/Cold start / Stop PLC
 *   Get CPU of PLC status
-*   List available blocks in PLC
+*   List available blocks in PLC (tested)
 *   Set/Clear password for session
 *   Get CPU protection and CPU Order code
 *   Get CPU/CP Information

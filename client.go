@@ -30,9 +30,9 @@ const (
 	s7wltimer   = 0x1D //Timer (16 bit)
 
 	// PLC Status
-	s7CpuStatusUnknown = 0x00
-	s7CpuStatusRun     = 0x08
-	s7CpuStatusStop    = 0x04
+	s7CpuStatusUnknown = 0
+	s7CpuStatusRun     = 8
+	s7CpuStatusStop    = 4
 
 	//size header
 	sizeHeaderRead  int = 31 // Header Size when Reading

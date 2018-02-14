@@ -19,7 +19,7 @@ AG:
 
 PG:
 *   Hot start/Cold start / Stop PLC
-*   Get CPU of PLC status
+*   Get CPU of PLC status (tested)
 *   List available blocks in PLC (tested)
 *   Set/Clear password for session
 *   Get CPU protection and CPU Order code

@@ -25,6 +25,8 @@ func ClientTestAll(t *testing.T, client gos7.Client) {
 	ClientTestGetCPUInfo(t, client)
 	//Get AG Block Info
 	ClientTestGetAGBlockInfo(t, client)
+	//get PLC status
+	ClientPLCGetStatus(t, client)
 }
 
 //ClientTestWriteIntDB client test write int
@@ -90,6 +92,15 @@ func ClientTestGetAGBlockInfo(t *testing.T, client gos7.Client) {
 		t.Fatal(err)
 	}
 	AssertEquals(t, info.CodeDate, "22.01.2018")
+}
+
+//ClientPLCGetStatus get PLC status
+func ClientPLCGetStatus(t *testing.T, client gos7.Client) {
+	status, err := client.PLCGetStatus()
+	if err != nil {
+		t.Fatal(err)
+	}
+	AssertEquals(t, status, 8) //8=running, 4=stop, 0=unknown
 }
 
 //AssertEquals helper

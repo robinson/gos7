@@ -85,8 +85,8 @@ func (mb *client) PLCStop() error {
 //
 func (mb *client) PLCGetStatus() (status int, err error) {
 	//initialize
-	requestData := make([]byte, len(s7StopTelegram))
-	copy(requestData, s7StopTelegram)
+	requestData := make([]byte, len(s7GetStatusTelegram))
+	copy(requestData, s7GetStatusTelegram)
 
 	request := NewProtocolDataUnit(requestData)
 	//send
@@ -94,18 +94,14 @@ func (mb *client) PLCGetStatus() (status int, err error) {
 	if err == nil {
 		if length := len(response.Data); length > 30 { // 30 is the minimum expected
 			if result := binary.BigEndian.Uint16(response.Data[27:]); result == 0 {
-				switch int(response.Data[44]) {
-				case s7CpuStatusUnknown:
-				case s7CpuStatusRun:
-				case s7CpuStatusStop:
+				if int(response.Data[44]) == 0 || int(response.Data[44]) == 8 || int(response.Data[44]) == 4 {
 					status = int(response.Data[44])
-					break
-				default:
-					// Since RUN status is always 0x08 for all CPUs and CPs, STOP status
-					// sometime can be coded as 0x03 (especially for old cpu...)
+				} else {
+					// Since RUN status is always 8 for all CPUs and CPs, STOP status
+					// sometime can be coded as 3 (especially for old cpu...)
 					status = s7CpuStatusStop
-					break
 				}
+
 			} else {
 				err = fmt.Errorf(ErrorText(CPUError(uint(result))))
 			}

@@ -16,6 +16,7 @@ AG:
 *   Read/Write Counter (CT) (tested)
 *   Multiple Read/Write Area
 *   Get Block Info (tested)
+
 PG:
 *   Hot start/Cold start / Stop PLC
 *   Get CPU of PLC status

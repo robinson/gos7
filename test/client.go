@@ -4,6 +4,7 @@ package test
 // This software may be modified and distributed under the terms
 // of the BSD license. See the LICENSE file for details.
 import (
+	"encoding/binary"
 	"runtime"
 	"strings"
 	"testing"
@@ -13,20 +14,22 @@ import (
 
 //ClientTestAll client test all
 func ClientTestAll(t *testing.T, client gos7.Client) {
-	//write value to 100
-	ClientTestWriteIntDB(t, client, 100)
-	//read and assert with 100
-	ClientTestReadIntDB(t, client)
-	//return 0
-	ClientTestWriteIntDB(t, client, 0)
-	//test directory
-	ClientTestDirectory(t, client)
-	//Get CPU info
-	ClientTestGetCPUInfo(t, client)
-	//Get AG Block Info
-	ClientTestGetAGBlockInfo(t, client)
-	//get PLC status
-	ClientPLCGetStatus(t, client)
+	// //write value to 100
+	// ClientTestWriteIntDB(t, client, 100)
+	// //read and assert with 100
+	// ClientTestReadIntDB(t, client)
+	// //return 0
+	// ClientTestWriteIntDB(t, client, 0)
+	// //test directory
+	// ClientTestDirectory(t, client)
+	// //Get CPU info
+	// ClientTestGetCPUInfo(t, client)
+	// //Get AG Block Info
+	// ClientTestGetAGBlockInfo(t, client)
+	// //get PLC status
+	// ClientPLCGetStatus(t, client)
+	//multi read
+	ClientAGReadMulti(t, client)
 }
 
 //ClientTestWriteIntDB client test write int
@@ -101,6 +104,39 @@ func ClientPLCGetStatus(t *testing.T, client gos7.Client) {
 		t.Fatal(err)
 	}
 	AssertEquals(t, status, 8) //8=running, 4=stop, 0=unknown
+}
+
+//ClientAGReadMulti read multi client
+func ClientAGReadMulti(t *testing.T, client gos7.Client) {
+	data1 := make([]byte, 1024)
+	data2 := make([]byte, 1024)
+
+	var items = []gos7.S7DataItem{
+		gos7.S7DataItem{
+			Area:     0x84,
+			WordLen:  0x02,
+			DBNumber: 2017,
+			Start:    8,
+			Amount:   2,
+			Data:     data1,
+		},
+		gos7.S7DataItem{
+			Area:     0x84,
+			WordLen:  0x02,
+			DBNumber: 1,
+			Start:    8,
+			Amount:   2,
+			Data:     data2,
+		},
+	}
+	err := client.AGReadMulti(items, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value1 := binary.BigEndian.Uint16(data1)
+	value2 := binary.BigEndian.Uint16(data2)
+	AssertEquals(t, value1, 100)
+	AssertEquals(t, value2, 0)
 }
 
 //AssertEquals helper

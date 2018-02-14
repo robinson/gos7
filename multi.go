@@ -16,7 +16,6 @@ type S7DataItem struct {
 	Start    int
 	Amount   int
 	Data     []byte
-	Error    error
 }
 
 //implement WriteMulti
@@ -108,9 +107,10 @@ func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err erro
 		}
 		for i := 0; i < itemsCount; i++ {
 			if response.Data[i+21] == 0xFF {
-				dataItems[i].Error = nil
+				err = nil
+				// dataItems[i].Error = nil
 			} else {
-				dataItems[i].Error = fmt.Errorf(ErrorText(CPUError(uint(response.Data[i+21]))))
+				err = fmt.Errorf(ErrorText(CPUError(uint(response.Data[i+21]))))
 			}
 		}
 	}
@@ -128,7 +128,7 @@ func (mb *client) AGReadMulti(dataItems []S7DataItem, itemsCount int) (err error
 	s7Multi := make([]byte, len(s7MultiReadHeaderTelegram))
 	copy(s7Multi, s7MultiReadHeaderTelegram)
 	// Fills Header
-	binary.BigEndian.Uint16(s7Multi[13 : 1+itemsCount*len(s7Item)+2])
+	binary.BigEndian.PutUint16(s7Multi[13:], uint16(itemsCount*len(s7Item)+2))
 	s7Multi[18] = byte(itemsCount)
 	// Fills the Items
 	offset := 19
@@ -194,13 +194,13 @@ func (mb *client) AGReadMulti(dataItems []S7DataItem, itemsCount int) (err error
 				itemSize = itemSize >> 3
 			}
 			copy(dataItems[i].Data, s7ItemRead[4:itemSize])
-			dataItems[i].Error = nil
+			err = nil
 			if itemSize%2 != 0 {
 				itemSize++ // Odd size are rounded
 			}
 			offset = offset + 4 + itemSize
 		} else {
-			dataItems[i].Error = fmt.Errorf(ErrorText(CPUError(uint(s7ItemRead[0]))))
+			err = fmt.Errorf(ErrorText(CPUError(uint(s7ItemRead[0]))))
 			offset += 4 // Skip the Item header
 		}
 	}

@@ -31,8 +31,8 @@ type S7BlockInfo struct {
 }
 
 func (mb *client) DBFill(dbnumber int, fillChar int) (err error) {
-	bi := S7BlockInfo{}
-	err = mb.GetAgBlockInfo(blockDB, dbnumber, &bi)
+	// bi := S7BlockInfo{}
+	bi, err := mb.GetAgBlockInfo(blockDB, dbnumber)
 	if err == nil {
 		buffer := make([]byte, bi.MC7Size)
 		for c := 0; c < bi.MC7Size; c++ {
@@ -44,8 +44,8 @@ func (mb *client) DBFill(dbnumber int, fillChar int) (err error) {
 }
 
 func (mb *client) DBGet(dbnumber int, usrdata []byte, size int) (err error) {
-	bi := S7BlockInfo{}
-	err = mb.GetAgBlockInfo(blockDB, dbnumber, &bi)
+	// bi := S7BlockInfo{}
+	bi, err := mb.GetAgBlockInfo(blockDB, dbnumber)
 	if err == nil {
 		if dbSize := bi.MC7Size; dbSize <= len(usrdata) {
 			size = dbSize
@@ -63,7 +63,7 @@ func (mb *client) DBGet(dbnumber int, usrdata []byte, size int) (err error) {
 //internal class returns info about a given block in PLC memory.
 //This function is very useful if you need to read or write data in a DB
 //which you do not know the size in advance ( MC7Size).
-func (mb *client) GetAgBlockInfo(blocktype int, blocknum int, info *S7BlockInfo) (err error) {
+func (mb *client) GetAgBlockInfo(blocktype int, blocknum int) (info S7BlockInfo, err error) {
 	//init buffer
 	requestData := make([]byte, len(s7BlockInfoTelegram))
 	copy(requestData, s7BlockInfoTelegram)
@@ -90,7 +90,7 @@ func (mb *client) GetAgBlockInfo(blocktype int, blocknum int, info *S7BlockInfo)
 				info.BlkNumber = int(binary.BigEndian.Uint16(response.Data[45:]))
 				info.LoadSize = int(binary.BigEndian.Uint32(response.Data[47:]))
 				info.CodeDate = siemensTimestamp(int64(binary.BigEndian.Uint16(response.Data[59:])))
-				info.IntfDate = siemensTimestamp(int64(binary.BigEndian.Uint16(response.Data[56:])))
+				info.IntfDate = siemensTimestamp(int64(binary.BigEndian.Uint16(response.Data[65:])))
 				info.SBBLength = int(binary.BigEndian.Uint16(response.Data[67:]))
 				info.LocalData = int(binary.BigEndian.Uint16(response.Data[71:]))
 				info.MC7Size = int(binary.BigEndian.Uint16(response.Data[73:]))
@@ -112,5 +112,5 @@ func (mb *client) GetAgBlockInfo(blocktype int, blocknum int, info *S7BlockInfo)
 
 //siemensTimestamp helper get Siemens timestamp
 func siemensTimestamp(EncodedDate int64) string {
-	return time.Date(1984, 1, 1, 0, 0, 0, 0, time.UTC).Add(time.Second * time.Duration((EncodedDate * 86400))).Format("dd.mm.yyyy")
+	return time.Date(1984, 1, 1, 0, 0, 0, 0, time.UTC).Add(time.Second * time.Duration((EncodedDate * 86400))).Format("02.01.2006")
 }

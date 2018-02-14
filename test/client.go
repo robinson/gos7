@@ -23,6 +23,8 @@ func ClientTestAll(t *testing.T, client gos7.Client) {
 	ClientTestDirectory(t, client)
 	//Get CPU info
 	ClientTestGetCPUInfo(t, client)
+	//Get AG Block Info
+	ClientTestGetAGBlockInfo(t, client)
 }
 
 //ClientTestWriteIntDB client test write int
@@ -79,6 +81,15 @@ func ClientTestGetCPUInfo(t *testing.T, client gos7.Client) {
 		t.Fatal(err)
 	}
 	AssertEquals(t, strings.Index(info.SerialNumber, "0118701484"), 0) //return serial should be "0118701484        ", some space
+}
+
+//ClientTestGetAGBlockInfo get AG block info
+func ClientTestGetAGBlockInfo(t *testing.T, client gos7.Client) {
+	info, err := client.GetAgBlockInfo(65, 2710)
+	if err != nil {
+		t.Fatal(err)
+	}
+	AssertEquals(t, info.CodeDate, "22.01.2018")
 }
 
 //AssertEquals helper

@@ -14,22 +14,25 @@ import (
 
 //ClientTestAll client test all
 func ClientTestAll(t *testing.T, client gos7.Client) {
-	// //write value to 100
-	// ClientTestWriteIntDB(t, client, 100)
-	// //read and assert with 100
-	// ClientTestReadIntDB(t, client)
-	// //return 0
-	// ClientTestWriteIntDB(t, client, 0)
-	// //test directory
-	// ClientTestDirectory(t, client)
-	// //Get CPU info
-	// ClientTestGetCPUInfo(t, client)
-	// //Get AG Block Info
-	// ClientTestGetAGBlockInfo(t, client)
-	// //get PLC status
-	// ClientPLCGetStatus(t, client)
-	//multi read
+	//write value to 100
+	ClientTestWriteIntDB(t, client, 100)
+	//read and assert with 100
+	ClientTestReadIntDB(t, client)
+	//return 0
+	ClientTestWriteIntDB(t, client, 0)
+	//test directory
+	ClientTestDirectory(t, client)
+	//Get CPU info
+	ClientTestGetCPUInfo(t, client)
+	//Get AG Block Info
+	ClientTestGetAGBlockInfo(t, client)
+	//get PLC status
+	ClientPLCGetStatus(t, client)
+
+	//multi read, 1: write to DB2710 value 100, 2: then read, 3: return to 0 in DB2710
+	ClientTestWriteIntDB(t, client, 100)
 	ClientAGReadMulti(t, client)
+	ClientTestWriteIntDB(t, client, 0)
 }
 
 //ClientTestWriteIntDB client test write int
@@ -110,33 +113,44 @@ func ClientPLCGetStatus(t *testing.T, client gos7.Client) {
 func ClientAGReadMulti(t *testing.T, client gos7.Client) {
 	data1 := make([]byte, 1024)
 	data2 := make([]byte, 1024)
+	data3 := make([]byte, 1024)
+	var error1, error2, error3 string
 
 	var items = []gos7.S7DataItem{
 		gos7.S7DataItem{
 			Area:     0x84,
 			WordLen:  0x02,
-			DBNumber: 2017,
-			Start:    8,
-			Amount:   2,
+			DBNumber: 2710,
+			Start:    0,
+			Amount:   16,
 			Data:     data1,
+			Error:    error1,
 		},
 		gos7.S7DataItem{
 			Area:     0x84,
 			WordLen:  0x02,
 			DBNumber: 1,
-			Start:    8,
-			Amount:   2,
+			Start:    0,
+			Amount:   16,
 			Data:     data2,
+			Error:    error2,
+		},
+		gos7.S7DataItem{
+			Area:     0x84,
+			WordLen:  0x02,
+			DBNumber: 3,
+			Start:    0,
+			Amount:   16,
+			Data:     data3,
+			Error:    error3,
 		},
 	}
-	err := client.AGReadMulti(items, 2)
+	err := client.AGReadMulti(items, 3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	value1 := binary.BigEndian.Uint16(data1)
-	value2 := binary.BigEndian.Uint16(data2)
-	AssertEquals(t, value1, 100)
-	AssertEquals(t, value2, 0)
+	value1 := binary.BigEndian.Uint16(data1[8:])
+	AssertEquals(t, value1, uint16(100))
 }
 
 //AssertEquals helper

@@ -16,6 +16,7 @@ type S7DataItem struct {
 	Start    int
 	Amount   int
 	Data     []byte
+	Error    string
 }
 
 //implement WriteMulti
@@ -107,10 +108,10 @@ func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err erro
 		}
 		for i := 0; i < itemsCount; i++ {
 			if response.Data[i+21] == 0xFF {
-				err = nil
-				// dataItems[i].Error = nil
+
+				dataItems[i].Error = ""
 			} else {
-				err = fmt.Errorf(ErrorText(CPUError(uint(response.Data[i+21]))))
+				dataItems[i].Error = ErrorText(CPUError(uint(response.Data[i+21])))
 			}
 		}
 	}
@@ -147,8 +148,7 @@ func (mb *client) AGReadMulti(dataItems []S7DataItem, itemsCount int) (err error
 		s7Item[10] = byte(addr & 0x0FF)
 		addr = addr >> 8
 		s7Item[9] = byte(addr & 0x0FF)
-
-		//copy(s7Multi[offset:offset+len(s7Item)], s7Item[0:])
+		//now expand array then put item into
 		s7Multi = append(s7Multi, s7Item...)
 		offset += len(s7Item)
 	}
@@ -170,7 +170,7 @@ func (mb *client) AGReadMulti(dataItems []S7DataItem, itemsCount int) (err error
 		return
 	}
 	// Check Global Operation Result
-	cpuErr := CPUError(uint(response.Data[17]))
+	cpuErr := CPUError(uint(binary.BigEndian.Uint16(response.Data[17:])))
 	if cpuErr != 0 {
 		err = fmt.Errorf(ErrorText(cpuErr))
 		return
@@ -187,20 +187,20 @@ func (mb *client) AGReadMulti(dataItems []S7DataItem, itemsCount int) (err error
 	for i := 0; i < itemsCount; i++ {
 		// Get the Item
 		copy(s7ItemRead[0:resLength-offset], response.Data[offset:resLength])
-		if s7ItemRead[0] == 0xff {
+		if s7ItemRead[0] == 255 {
 			itemSize := int(binary.BigEndian.Uint16(s7ItemRead[2:]))
 			item1 := s7ItemRead[1]
 			if item1 != tsResOctet && item1 != tsResReal && item1 != tsResBit {
 				itemSize = itemSize >> 3
 			}
-			copy(dataItems[i].Data, s7ItemRead[4:itemSize])
-			err = nil
+			copy(dataItems[i].Data[0:], s7ItemRead[4:4+itemSize])
+			dataItems[i].Error = ""
 			if itemSize%2 != 0 {
 				itemSize++ // Odd size are rounded
 			}
 			offset = offset + 4 + itemSize
 		} else {
-			err = fmt.Errorf(ErrorText(CPUError(uint(s7ItemRead[0]))))
+			dataItems[i].Error = ErrorText(CPUError(uint(s7ItemRead[0])))
 			offset += 4 // Skip the Item header
 		}
 	}

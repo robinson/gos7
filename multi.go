@@ -29,6 +29,7 @@ func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err erro
 	//fills header
 	s7Multi := make([]byte, len(s7MultiWriteHeaderTelegram))
 	copy(s7Multi, s7MultiWriteHeaderTelegram)
+
 	parLength := itemsCount*len(s7MultiWriteItemTelegram) + 2
 	binary.BigEndian.PutUint16(s7Multi[13:], uint16(parLength))
 	s7Multi[18] = byte(itemsCount)
@@ -49,39 +50,40 @@ func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err erro
 		addr = addr >> 8
 		s7ParamItem[9] = byte(addr & 0x0FF)
 		// copy(s7Multi[offset:offset+len(s7ParamItem)], s7ParamItem[0:])
-		s7Multi = append(s7Multi, s7ParamItem...)
+		s7Multi = append(s7Multi[:offset], append(s7ParamItem, s7Multi[offset:]...)...)
 		offset += len(s7ParamItem)
 	}
 	dataLength := 0
 	for i := 0; i < itemsCount; i++ {
 		s7ItemWrite := make([]byte, 1024)
-		s7ItemWrite[0] = 0x00
+		s7ItemWrite[0] = 0
 		itemDataSize := 0
 		switch dataItems[i].WordLen {
 		case s7wlbit:
 			s7ItemWrite[1] = tsResBit
 			itemDataSize = dataItems[i].Amount
-			binary.BigEndian.PutUint16(s7ItemWrite[2:], uint16(itemDataSize*8))
+			binary.BigEndian.PutUint16(s7ItemWrite[2:], uint16(itemDataSize))
 			break
 		case s7wlcounter:
 		case s7wltimer:
 			s7ItemWrite[1] = tsResOctet
 			itemDataSize = dataItems[i].Amount * 2
-			binary.BigEndian.PutUint16(s7ItemWrite[2:], uint16(itemDataSize*8))
+			binary.BigEndian.PutUint16(s7ItemWrite[2:], uint16(itemDataSize))
 			break
 		default:
 			s7ItemWrite[1] = tsResByte // byte/word/dword etc.
 			itemDataSize = dataItems[i].Amount
-			binary.BigEndian.PutUint16(s7ItemWrite[2:], uint16(itemDataSize))
+			binary.BigEndian.PutUint16(s7ItemWrite[2:], uint16(itemDataSize*8))
 			break
 
 		}
 		copy(s7ItemWrite[4:4+itemDataSize], dataItems[i].Data)
 		if itemDataSize%2 != 0 {
-			s7ItemWrite[itemDataSize+4] = 0x00
+			s7ItemWrite[itemDataSize+4] = 0
 			itemDataSize++
 		}
-		copy(s7Multi[offset:offset+itemDataSize+4], s7ItemWrite[0:itemDataSize+4])
+		// copy(s7Multi[offset:offset+itemDataSize+4], s7ItemWrite[0:itemDataSize+4])
+		s7Multi = append(s7Multi, s7ItemWrite[0:itemDataSize+4]...)
 		offset = offset + itemDataSize + 4
 		dataLength = dataLength + itemDataSize + 4
 	}
@@ -93,11 +95,13 @@ func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err erro
 	binary.BigEndian.PutUint16(s7Multi[2:], uint16(offset))      // Whole size
 	binary.BigEndian.PutUint16(s7Multi[15:], uint16(dataLength)) // Whole size
 	request := NewProtocolDataUnit(s7Multi)
+	//debug
+	fmt.Printf("%d", s7Multi)
 	//send
 	response, err := mb.send(&request)
 	if err == nil {
 		// Check Global Operation Result
-		cpuErr := CPUError(uint(response.Data[17]))
+		cpuErr := CPUError(uint(binary.BigEndian.Uint16(response.Data[17:])))
 		if cpuErr != 0 {
 			err = fmt.Errorf(ErrorText(cpuErr))
 			return

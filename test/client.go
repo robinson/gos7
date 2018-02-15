@@ -28,11 +28,10 @@ func ClientTestAll(t *testing.T, client gos7.Client) {
 	ClientTestGetAGBlockInfo(t, client)
 	//get PLC status
 	ClientPLCGetStatus(t, client)
-
-	//multi read, 1: write to DB2710 value 100, 2: then read, 3: return to 0 in DB2710
-	ClientTestWriteIntDB(t, client, 100)
+	//multi write to DB2710 -> 1, DB2810 ->2
+	ClientAGWriteMulti(t, client)
+	//multi read
 	ClientAGReadMulti(t, client)
-	ClientTestWriteIntDB(t, client, 0)
 }
 
 //ClientTestWriteIntDB client test write int
@@ -129,7 +128,7 @@ func ClientAGReadMulti(t *testing.T, client gos7.Client) {
 		gos7.S7DataItem{
 			Area:     0x84,
 			WordLen:  0x02,
-			DBNumber: 1,
+			DBNumber: 2810,
 			Start:    0,
 			Amount:   16,
 			Data:     data2,
@@ -138,7 +137,7 @@ func ClientAGReadMulti(t *testing.T, client gos7.Client) {
 		gos7.S7DataItem{
 			Area:     0x84,
 			WordLen:  0x02,
-			DBNumber: 3,
+			DBNumber: 2910,
 			Start:    0,
 			Amount:   16,
 			Data:     data3,
@@ -149,8 +148,65 @@ func ClientAGReadMulti(t *testing.T, client gos7.Client) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	value1 := binary.BigEndian.Uint16(data1[8:])
-	AssertEquals(t, value1, uint16(100))
+	value1 := binary.BigEndian.Uint16(data1[8:]) //in ClientAGWriteMulti wrote all to 1, then output should be 256 + 1
+	value2 := binary.BigEndian.Uint16(data2[8:]) //
+	value3 := binary.BigEndian.Uint16(data3[8:]) //
+
+	AssertEquals(t, value1, uint16(257))
+	AssertEquals(t, value2, uint16(514))
+	AssertEquals(t, value3, uint16(0))
+}
+
+//ClientAGWriteMulti read multi client
+func ClientAGWriteMulti(t *testing.T, client gos7.Client) {
+	data1 := make([]byte, 1024)
+	data2 := make([]byte, 1024)
+	data3 := make([]byte, 1024)
+
+	for i := 0; i < 16; i++ {
+		data1[i] = 0x01
+		data2[i] = 0x02
+	}
+	var error1, error2, error3 string
+
+	var items = []gos7.S7DataItem{
+		gos7.S7DataItem{
+			Area:     0x84,
+			WordLen:  0x02,
+			DBNumber: 2710,
+			Start:    0,
+			Amount:   16,
+			Data:     data1,
+			Error:    error1,
+		},
+		gos7.S7DataItem{
+			Area:     0x84,
+			WordLen:  0x02,
+			DBNumber: 2810,
+			Start:    0,
+			Amount:   16,
+			Data:     data2,
+			Error:    error2,
+		},
+		gos7.S7DataItem{
+			Area:     0x84,
+			WordLen:  0x02,
+			DBNumber: 2910,
+			Start:    0,
+			Amount:   16,
+			Data:     data3,
+			Error:    error3,
+		},
+	}
+	err := client.AGWriteMulti(items, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if error1 != "" || error2 != "" || error3 != "" {
+		t.Fatal(error1 + error2 + error3)
+	}
+	//value1 := binary.BigEndian.Uint16(data1[8:])
+	AssertEquals(t, "", error1)
 }
 
 //AssertEquals helper

@@ -14,7 +14,7 @@ AG:
 *   Read/Write IPU (AB) (tested)
 *   Read/Write Timer (TM)  (tested)
 *   Read/Write Counter (CT) (tested)
-*   Multiple Read/Write Area
+*   Multiple Read/Write Area (tested)
 *   Get Block Info (tested)
 
 PG:

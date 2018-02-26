@@ -6,6 +6,8 @@ package gos7
 import (
 	"encoding/binary"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -59,12 +61,12 @@ type client struct {
 	transporter Transporter
 }
 
-// NewClient creates a new modbus client with given backend handler.
+// NewClient creates a new s7 client with given backend handler.
 func NewClient(handler ClientHandler) Client {
 	return &client{packager: handler, transporter: handler}
 }
 
-// NewClient2 creates a new modbus client with given backend packager and transporter.
+// NewClient2 creates a new s7 client with given backend packager and transporter.
 func NewClient2(packager Packager, transporter Transporter) Client {
 	return &client{packager: packager, transporter: transporter}
 }
@@ -359,6 +361,99 @@ func (mb *client) writeArea(area int, dbnumber int, start int, amount int, wordl
 		offset += dataSize
 		totElements -= numElements
 		start += numElements * wordSize
+	}
+	return
+}
+
+//DBRead
+func (mb *client) Read(variable string) (value interface{}, err error) {
+	variable = strings.ToUpper(variable)              //upper
+	variable = strings.Replace(variable, " ", "", -1) //remove spaces
+
+	if variable == "" {
+		err = fmt.Errorf("input variable is empty, variable should be S7 syntax")
+		return
+	}
+	//var area, dbNumber, start, amount, wordLen int
+	var buffer []byte
+	switch valueArea := variable[0:2]; valueArea {
+	case "EB": //input byte
+	case "EW": //input word
+	case "ED": //Input double-word
+	case "AB": //Output byte
+	case "AW": //Output word
+	case "AD": //Output double-word
+	case "MB": //Memory byte
+	case "MW": //Memory word
+	case "MD": //Memory double-word
+	case "DB": //Data Block
+		dbArray := strings.Split(variable, ".")
+		if len(dbArray) < 2 {
+			err = fmt.Errorf("Db Area read variable should not be empty")
+			return
+		}
+		dbNo, _ := strconv.ParseInt(string(string(dbArray[0])[2:]), 10, 16)
+		dbIndex, _ := strconv.ParseInt(string(string(dbArray[1])[3:]), 10, 16)
+		dbType := string(dbArray[1])[0:3]
+
+		switch dbType {
+		case "DBB": //byte
+			err = mb.AGReadDB(int(dbNo), int(dbIndex), 1, buffer)
+			value = buffer[0]
+			return
+		case "DBW": //word
+			err = mb.AGReadDB(int(dbNo), int(dbIndex), 2, buffer)
+			value = binary.BigEndian.Uint16(buffer[0:])
+			return
+		case "DBD": //dword
+			err = mb.AGReadDB(int(dbNo), int(dbIndex), 4, buffer)
+			value = binary.BigEndian.Uint32(buffer[0:])
+			return
+		case "DBX": //bit
+			mBit, _ := strconv.ParseInt(string(string(dbArray[2])[0:]), 10, 16)
+			if mBit > 7 || mBit < 0 {
+				err = fmt.Errorf("Db read bit is invalid")
+				return
+			}
+			err = mb.AGReadDB(int(dbNo), int(dbIndex), 1, buffer)
+			mask := []byte{0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80}
+			value = buffer[0] & mask[mBit]
+			return
+		default:
+			err = fmt.Errorf("error when parsing dbtype")
+			return
+		}
+	default:
+		switch otherArea := variable[0:1]; otherArea {
+		case "E":
+		case "I": //input
+		case "A":
+		case "0": //output
+		case "M": //memory
+		case "T": //timer
+			startByte, _ := strconv.ParseInt(string(variable[1:]), 10, 16)
+			err = mb.AGReadTM(int(startByte), 1, buffer)
+			if err != nil {
+				return
+			}
+			helper := Helper{}
+			helper.GetValueAt(buffer, 0, value)
+			return
+		case "Z":
+		case "C": //counter
+			startByte, _ := strconv.ParseInt(string(variable[1:]), 10, 16)
+			err = mb.AGReadCT(int(startByte), 1, buffer)
+			if err != nil {
+				return
+			}
+			helper := Helper{}
+			helper.GetValueAt(buffer, 0, value)
+			return
+		default:
+			err = fmt.Errorf("error when parsing db area")
+			return
+		}
+
 	}
 	return
 }

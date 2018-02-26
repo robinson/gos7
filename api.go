@@ -41,6 +41,8 @@ type Client interface {
 	/*block*/
 	DBFill(dbnumber int, fillchar int) error
 	DBGet(dbnumber int, usrdata []byte, size int) error
+	//general read function with S7 sytax
+	Read(variable string) (value interface{}, err error)
 	//Get block  infor in AG area, refer an S7BlockInfor pointer
 	GetAgBlockInfo(blocktype int, blocknum int) (info S7BlockInfo, err error)
 	/***************end API AG***************/

@@ -66,7 +66,7 @@ buf := make([]byte, 255)
 err := client.AGReadDB(address, start, size, buf)
 var s7 gos7.Helper
 var result uint16
-s7.GetValueAt(buffer, 0, &result)	 
+s7.GetValueAt(buf, 0, &result)	 
   
 ```
 References

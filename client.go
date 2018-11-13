@@ -347,7 +347,8 @@ func (mb *client) writeArea(area int, dbnumber int, start int, amount int, wordl
 
 		//expand values into array
 		request.Data = append(request.Data[:35], append(buffer[offset:offset+dataSize], request.Data[35:]...)...)
-		response, err := mb.send(&request)
+		response, sendError := mb.send(&request)
+		err = sendError
 		if err == nil {
 			if length = len(response.Data); length == 22 {
 				if response.Data[21] != byte(0xFF) {

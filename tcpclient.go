@@ -83,6 +83,8 @@ type tcpTransporter struct {
 	remoteTSAPHigh, remoteTSAPLow byte
 	ConnectionType                int
 	LastPDUType                   byte
+
+	PDULength int
 }
 
 func (mb *tcpTransporter) setConnectionParameters(address string, localTSAP uint16, remoteTSAP uint16) {
@@ -221,8 +223,8 @@ func (mb *tcpTransporter) negotiatePduLength() error {
 	length := len(response)
 	if length == 27 && response[17] == 0 && response[18] == 0 { // 20 = size of Negotiate Answer
 		// Get PDU Size Negotiated
-		PDULength = int(binary.BigEndian.Uint16(response[25:]))
-		if PDULength <= 0 {
+		mb.PDULength = int(binary.BigEndian.Uint16(response[25:]))
+		if mb.PDULength <= 0 {
 			err = fmt.Errorf(ErrorText(errCliNegotiatingPDU))
 		}
 	} else {

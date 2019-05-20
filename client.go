@@ -49,9 +49,9 @@ const (
 )
 
 //PDULength variable to store pdu length after connect
-var PDULength int //global variable pdulength
+//var tt, _ := mb.transporter.(*tcpTransporter)tt, _ := mb.transporter.(*tcpTransporter) int //global variable pdulength
 
-// ClientHandler is the interface that groups the Packager and Transporter methods.
+// CliePDULengthntHandler is the interface that groups the Packager and Transporter methods.
 type ClientHandler interface {
 	Packager
 	Transporter
@@ -184,7 +184,10 @@ func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLe
 			wordLen = s7wlbyte
 		}
 	}
-	maxElements = (PDULength - 18) / wordSize // 18 = Reply telegram header //lth note here
+
+	tt, _ := interface{}(mb.transporter).(*TCPClientHandler)
+
+	maxElements = (tt.PDULength - 18) / wordSize // 18 = Reply telegram header //lth note here
 	totElements = amount
 	for totElements > 0 && err == nil {
 		numElements = totElements
@@ -278,7 +281,8 @@ func (mb *client) writeArea(area int, dbnumber int, start int, amount int, wordl
 			wordlen = s7wlbyte
 		}
 	}
-	maxElements = (PDULength - 35) / wordSize // 35 = Reply telegram header
+	tt, _ := interface{}(mb.transporter).(*TCPClientHandler)
+	maxElements = (tt.PDULength - 35) / wordSize // 35 = Reply telegram header
 	totElements = amount
 	for totElements > 0 && err == nil {
 		numElements = totElements

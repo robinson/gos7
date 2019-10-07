@@ -233,3 +233,18 @@ func (s7 *Helper) SetCounterAt(buffer []uint16, pos int, value int) []uint16 {
 	buffer[pos] = s7.ToCounter(value)
 	return buffer
 }
+
+// SetBoolAt sets a boolean (bit) within a byte at bit position
+// without changing the other bits
+// it returns the resulted byte
+func (s7 *Helper) SetBoolAt(b byte, bitPos uint, data bool) byte {
+	if data {
+		return b | (1 << bitPos)
+	}
+	return b &^ (1 << bitPos)
+}
+
+// GetBoolAt gets a boolean (bit) from a byte at position
+func (s7 *Helper) GetBoolAt(b byte, pos uint) bool {
+	return b&(1<<pos) != 0
+}

@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-	"strconv"
 	"time"
 )
 
@@ -76,8 +75,8 @@ func (s7 *Helper) GetDateTimeAt(Buffer []byte, Pos int) time.Time {
 	Hour = decodeBcd(Buffer[Pos+3])
 	Min = decodeBcd(Buffer[Pos+4])
 	Sec = decodeBcd(Buffer[Pos+5])
-	MSec = (decodeBcd(Buffer[Pos+6]) * 10) + (decodeBcd(Buffer[Pos+7]) / 10)
-	return time.Date(Year, time.Month(Month), Day, Hour, Min, Sec, MSec, time.UTC)
+	MSec = decodeBcd(Buffer[Pos+6])*10 + decodeBcd(Buffer[Pos+7]>>4)
+	return time.Date(Year, time.Month(Month), Day, Hour, Min, Sec, MSec*1000000, time.UTC)
 }
 
 //Binary-coded decimal https://en.wikipedia.org/wiki/Binary-coded_decimal
@@ -102,8 +101,10 @@ func (s7 *Helper) SetDateTimeAt(buffer []byte, pos int, value time.Time) {
 	msh := int(int64(value.UnixNano()/1000000) / 10)
 	// msl = Last digit of miliseconds
 	msl := int(int64(value.UnixNano()/1000000) % 10)
-	if y > 1999 {
+	if y >= 2000 {
 		y -= 2000
+	} else {
+		y -= 1900
 	}
 	buffer[pos] = encodeBcd(y)
 	buffer[pos+1] = encodeBcd(m)
@@ -111,13 +112,13 @@ func (s7 *Helper) SetDateTimeAt(buffer []byte, pos int, value time.Time) {
 	buffer[pos+3] = encodeBcd(h)
 	buffer[pos+4] = encodeBcd(mi)
 	buffer[pos+5] = encodeBcd(s)
-	buffer[pos+6] = encodeBcd(msh)
-	buffer[pos+7] = encodeBcd(msl*10 + dow)
+	buffer[pos+6] = encodeBcd(value.Nanosecond() / 1000000 / 10)
+	buffer[pos+7] = (encodeBcd(value.Nanosecond()/1000000%10) << 4) | encodeBcd(int(value.Weekday()))
 }
 
 //GetDateAt DATE (S7 DATE)
 func (s7 *Helper) GetDateAt(buffer []byte, pos int) time.Time {
-	initDate := time.Date(1900, time.Month(1), 1, 0, 0, 0, 0, time.UTC)
+	initDate := time.Date(1990, time.Month(1), 1, 0, 0, 0, 0, time.UTC)
 	var year int16
 	s7.GetValueAt(buffer, pos, &year)
 	return initDate.AddDate(0, 0, int(year))
@@ -125,20 +126,23 @@ func (s7 *Helper) GetDateAt(buffer []byte, pos int) time.Time {
 
 //SetDateAt DATE (S7 DATE)
 func (s7 *Helper) SetDateAt(buffer []byte, pos int, value time.Time) {
-	initDate := time.Date(1900, time.Month(1), 1, 0, 0, 0, 0, time.UTC)
-	s7.SetValueAt(buffer, pos, int16(value.YearDay()-initDate.YearDay()))
+	initDate := time.Date(1990, time.Month(1), 1, 0, 0, 0, 0, time.UTC)
+	hours := value.Sub(initDate).Hours()
+	days := int16(hours / 24)
+	s7.SetValueAt(buffer, pos, days)
 }
 
 //GetTODAt TOD (S7 TIME_OF_DAY)
 func (s7 *Helper) GetTODAt(buffer []byte, pos int) time.Time {
-	var nano int32
-	s7.GetValueAt(buffer, pos, &nano)
-	return time.Date(0001, 1, 1, 0, 0, int(nano/1000), 0, time.UTC)
+	var ms int32
+	s7.GetValueAt(buffer, 0, &ms)
+	return time.Date(1970, time.Month(1), 1, 0, 0, 0, int(ms)*1000000, time.UTC)
 }
 
 //SetTODAt TOD (S7 TIME_OF_DAY)
 func (s7 *Helper) SetTODAt(buffer []byte, pos int, value time.Time) {
-	s7.SetValueAt(buffer, pos, int32(value.Nanosecond()/1000000))
+	v := int32((value.Hour()*3600 + value.Minute()*60 + value.Second()) * 1000)
+	s7.SetValueAt(buffer, pos, v)
 }
 
 //GetLTODAt LTOD (S7 1500 LONG TIME_OF_DAY)
@@ -146,51 +150,48 @@ func (s7 *Helper) GetLTODAt(Buffer []byte, Pos int) time.Time {
 	//S71500 Tick = 1 ns
 	var nano int64
 	s7.GetValueAt(Buffer, Pos, &nano)
-	return time.Date(0, 0, 0, 0, 0, 0, int(nano), time.UTC)
+	return time.Date(1970, time.Month(1), 1, 0, 0, 0, int(nano), time.UTC)
 }
 
 //SetLTODAt LTOD (S7 1500 LONG TIME_OF_DAY)
 func (s7 *Helper) SetLTODAt(buffer []byte, pos int, value time.Time) {
-	s7.SetValueAt(buffer, pos, int64(value.Nanosecond()))
+	v := int64((value.Hour()*3600 + value.Minute()*60 + value.Second()) * 1000000000)
+	s7.SetValueAt(buffer, pos, v)
 }
 
 //GetLDTAt LDT (S7 1500 Long Date and Time)
 func (s7 *Helper) GetLDTAt(buffer []byte, pos int) time.Time {
 	var nano int64
 	s7.GetValueAt(buffer, pos, &nano)
-	return time.Date(0, 0, 0, 0, 0, 0, int(nano+bias), time.UTC)
+	return time.Date(1970, time.Month(1), 1, 0, 0, 0, int(nano), time.UTC)
 }
 
 //SetLDTAt LDT (S7 1500 Long Date and Time)
 func (s7 *Helper) SetLDTAt(buffer []byte, pos int, value time.Time) {
-	s7.SetValueAt(buffer, pos, int64(value.Nanosecond())-bias)
+	s7.SetValueAt(buffer, pos, value.UnixNano())
 }
 
 //GetDTLAt DTL (S71200/1500 Date and Time)
 func (s7 *Helper) GetDTLAt(buffer []byte, pos int) time.Time {
-	Year := int(buffer[pos])*256 + int(buffer[pos+1])
-	Month := int(buffer[pos+2])
-	Day := int(buffer[pos+3])
-	Hour := int(buffer[pos+5])
-	Min := int(buffer[pos+6])
-	Sec := int(buffer[pos+7])
-	var nsec int
-	s7.GetValueAt(buffer, pos, &nsec)
-	return time.Date(Year, time.Month(Month), Day, Hour, Min, Sec, nsec, time.UTC)
+	var year uint16
+	var nanos int32
+	s7.GetValueAt(buffer, pos+0, &year)
+	s7.GetValueAt(buffer, pos+8, &nanos)
+	return time.Date(int(year), time.Month(int(buffer[pos+2])), int(buffer[pos+3]), int(buffer[pos+5]), int(buffer[pos+6]), int(buffer[pos+7]), int(nanos), time.UTC)
 }
 
 //SetDTLAt DTL (S71200/1500 Date and Time)
 func (s7 *Helper) SetDTLAt(buffer []byte, pos int, value time.Time) []byte {
-	Year := []byte(strconv.Itoa(value.Year()))
-	buffer[pos] = Year[1]
-	buffer[pos+1] = Year[0]
+	year := uint16(value.Year())
+	s7.SetValueAt(buffer, pos, year)
 	buffer[pos+2] = byte(value.Month())
 	buffer[pos+3] = byte(value.Day())
-	buffer[pos+4] = byte(int(value.Weekday()) + 1)
+	buffer[pos+4] = byte(value.Weekday())
 	buffer[pos+5] = byte(value.Hour())
 	buffer[pos+6] = byte(value.Minute())
 	buffer[pos+7] = byte(value.Second())
-	buffer[pos+7] = byte(value.Nanosecond())
+	nanos := int32(value.Nanosecond())
+	s7.SetValueAt(buffer, pos+8, nanos)
 	return buffer
 }
 

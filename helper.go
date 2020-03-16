@@ -114,9 +114,9 @@ func (s7 *Helper) SetDateTimeAt(buffer []byte, pos int, value time.Time) {
 //GetDateAt DATE (S7 DATE)
 func (s7 *Helper) GetDateAt(buffer []byte, pos int) time.Time {
 	initDate := time.Date(1990, time.Month(1), 1, 0, 0, 0, 0, time.UTC)
-	var year int16
-	s7.GetValueAt(buffer, pos, &year)
-	return initDate.AddDate(0, 0, int(year))
+	var days int16
+	s7.GetValueAt(buffer, pos, &days)
+	return initDate.AddDate(0, 0, int(days))
 }
 
 //SetDateAt DATE (S7 DATE)
@@ -187,6 +187,42 @@ func (s7 *Helper) SetDTLAt(buffer []byte, pos int, value time.Time) []byte {
 	buffer[pos+7] = byte(value.Second())
 	nanos := int32(value.Nanosecond())
 	s7.SetValueAt(buffer, pos+8, nanos)
+	return buffer
+}
+
+// Get S5Time
+func (s7 *Helper) GetS5TimeAt(buffer []byte, pos int) time.Duration {
+	t := decodeBcd(buffer[pos+0]&0b00001111)*100 + decodeBcd(buffer[pos+1])
+	switch buffer[pos+0] & 0b00110000 {
+	case 0b00000000:
+		t *= 10
+	case 0b00010000:
+		t *= 100
+	case 0b00100000:
+		t *= 1000
+	case 0b00110000:
+		t *= 10000
+	}
+	d, _ := time.ParseDuration(fmt.Sprintf("%dms", t))
+	return d
+}
+
+func (s7 *Helper) SetS5TimeAt(buffer []byte, pos int, value time.Duration) []byte {
+	ms := value.Milliseconds()
+	switch {
+	case ms < 9990:
+		buffer[pos+1] = encodeBcd(int(ms) / 10 % 100)
+		buffer[pos+0] = encodeBcd(int(ms)/10/100) &^ 0b11110000
+	case ms > 100 && ms < 99900:
+		buffer[pos+1] = encodeBcd(int(ms) / 100 % 100)
+		buffer[pos+0] = encodeBcd(int(ms)/100/100)&^0b11100000 | 0b00010000
+	case ms > 1000 && ms < 999000:
+		buffer[pos+1] = encodeBcd(int(ms) / 1000 % 100)
+		buffer[pos+0] = encodeBcd(int(ms)/1000/100)&^0b11010000 | 0b00100000
+	case ms > 10000 && ms < 9990000:
+		buffer[pos+1] = encodeBcd(int(ms) / 10000 % 100)
+		buffer[pos+0] = encodeBcd(int(ms)/10000/100)&^0b11000000 | 0b00110000
+	}
 	return buffer
 }
 

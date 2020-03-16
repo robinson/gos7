@@ -96,11 +96,6 @@ func (s7 *Helper) SetDateTimeAt(buffer []byte, pos int, value time.Time) {
 	h := value.Hour()
 	mi := value.Minute()
 	s := value.Second()
-	dow := int(value.Weekday()) + 1
-	// msh = First two digits of miliseconds
-	msh := int(int64(value.UnixNano()/1000000) / 10)
-	// msl = Last digit of miliseconds
-	msl := int(int64(value.UnixNano()/1000000) % 10)
 	if y >= 2000 {
 		y -= 2000
 	} else {

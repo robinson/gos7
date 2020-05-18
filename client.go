@@ -81,6 +81,11 @@ func (mb *client) AGWriteDB(dbNumber int, start int, size int, buffer []byte) (e
 	return mb.writeArea(s7areadb, dbNumber, start, size, s7wlbyte, buffer)
 }
 
+//WriteDBBit write bits into DB
+func (mb *client) AGWriteDBBit(dbNumber int, start int, size int, buffer []byte) (err error) {
+	return mb.writeArea(s7areadb, dbNumber, start, size, s7wlbit, buffer)
+}
+
 //implement of the interface AGReadMB
 func (mb *client) AGReadMB(start int, size int, buffer []byte) (err error) {
 	return mb.readArea(s7areamk, 0, start, size, s7wlbyte, buffer)

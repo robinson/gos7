@@ -192,8 +192,7 @@ func CPUError(err uint) int {
 		return errCliInvalidTransportSize
 	case code7WriteDataSizeMismatch:
 		return errCliWriteDataSizeMismatch
-	case code7ResItemNotAvailable:
-	case code7ResItemNotAvailable1:
+	case code7ResItemNotAvailable, code7ResItemNotAvailable1:
 		return errCliItemNotAvailable
 	case code7DataOverPDU:
 		return errCliSizeOverPDU
@@ -205,8 +204,7 @@ func CPUError(err uint) int {
 		return errCliNeedPassword
 	case code7InvalidPassword:
 		return errCliInvalidPassword
-	case code7NoPasswordToSet:
-	case code7NoPasswordToClear:
+	case code7NoPasswordToSet, code7NoPasswordToClear:
 		return errCliNoPasswordToSetOrClear
 	default:
 		return errCliFunctionRefused

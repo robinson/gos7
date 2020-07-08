@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -90,7 +91,11 @@ type tcpTransporter struct {
 func (mb *tcpTransporter) setConnectionParameters(address string, localTSAP uint16, remoteTSAP uint16) {
 	locTSAP := localTSAP & 0x0000FFFF
 	remTSAP := remoteTSAP & 0x0000FFFF
-	mb.Address = address + ":" + strconv.Itoa(isoTCP) //ip:102
+	if len(strings.Split(address, ":")) < 2 {
+		mb.Address = address + ":" + strconv.Itoa(isoTCP) //ip:102
+	} else {
+		mb.Address = address
+	}
 	mb.localTSAPHigh = byte(locTSAP >> 8)
 	mb.localTSAPLow = byte(locTSAP & 0x00FF)
 	mb.remoteTSAPHigh = byte(remTSAP >> 8)

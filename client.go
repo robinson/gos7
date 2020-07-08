@@ -224,9 +224,10 @@ func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLe
 		request.Data[29] = byte(address & 0x0FF)
 		address = address >> 8
 		request.Data[28] = byte(address & 0x0FF)
-
+    var response *ProtocolDataUnit
 		response, sendError := mb.send(&request)
 		err = sendError
+
 		if err == nil {
 			if size := len(response.Data); size < 25 {
 				err = fmt.Errorf(ErrorText(errIsoInvalidDataSize)+"'%v'", len(response.Data))

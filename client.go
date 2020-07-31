@@ -373,7 +373,7 @@ func (mb *client) writeArea(area int, dbnumber int, start int, amount int, wordl
 }
 
 //DBRead
-func (mb *client) Read(variable string) (value interface{}, err error) {
+func (mb *client) Read(variable string, buffer []byte) (value interface{}, err error) {
 	variable = strings.ToUpper(variable)              //upper
 	variable = strings.Replace(variable, " ", "", -1) //remove spaces
 
@@ -382,7 +382,6 @@ func (mb *client) Read(variable string) (value interface{}, err error) {
 		return
 	}
 	//var area, dbNumber, start, amount, wordLen int
-	var buffer []byte
 	switch valueArea := variable[0:2]; valueArea {
 	case "EB": //input byte
 	case "EW": //input word

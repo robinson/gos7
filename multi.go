@@ -42,8 +42,16 @@ func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err erro
 		s7ParamItem[8] = byte(dataItems[i].Area)                                   //area
 		binary.BigEndian.PutUint16(s7ParamItem[4:], uint16(dataItems[i].Amount))   //amount
 		binary.BigEndian.PutUint16(s7ParamItem[6:], uint16(dataItems[i].DBNumber)) //DBNo
-		// Address into the PLC
-		addr := dataItems[i].Start
+
+		// Adjusts the offset
+		var addr int
+		if dataItems[i].WordLen == s7wlbit || dataItems[i].WordLen == s7wlcounter || dataItems[i].WordLen == s7wltimer {
+			addr = dataItems[i].Start
+		} else {
+			addr = dataItems[i].Start * 8
+		}
+
+		// Build the offset
 		s7ParamItem[11] = byte(addr & 0x0FF)
 		addr = addr >> 8
 		s7ParamItem[10] = byte(addr & 0x0FF)
@@ -146,8 +154,16 @@ func (mb *client) AGReadMulti(dataItems []S7DataItem, itemsCount int) (err error
 			binary.BigEndian.PutUint16(s7Item[6:], uint16(dataItems[i].DBNumber))
 		}
 		s7Item[8] = byte(dataItems[i].Area)
-		// Address into the PLC
-		addr := dataItems[i].Start
+
+		// Adjusts the offset
+		var addr int
+		if dataItems[i].WordLen == s7wlbit || dataItems[i].WordLen == s7wlcounter || dataItems[i].WordLen == s7wltimer {
+			addr = dataItems[i].Start
+		} else {
+			addr = dataItems[i].Start * 8
+		}
+
+		// Build the offset
 		s7Item[11] = byte(addr & 0x0FF)
 		addr = addr >> 8
 		s7Item[10] = byte(addr & 0x0FF)

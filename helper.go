@@ -207,6 +207,7 @@ func (s7 *Helper) GetS5TimeAt(buffer []byte, pos int) time.Duration {
 	return d
 }
 
+//SetS5TimeAt Set S5Time
 func (s7 *Helper) SetS5TimeAt(buffer []byte, pos int, value time.Duration) []byte {
 	ms := value.Milliseconds()
 	switch {
@@ -229,9 +230,59 @@ func (s7 *Helper) SetS5TimeAt(buffer []byte, pos int, value time.Duration) []byt
 //SetStringAt Set String (S7 String)
 func (s7 *Helper) SetStringAt(buffer []byte, pos int, maxLen int, value string) []byte {
 	buffer[pos] = byte(maxLen)
-	buffer[pos+1] = byte(len(value))
-	buffer = append(buffer[:pos+2], append([]byte(value), buffer[pos+2:]...)...)
+	var byteLen int
+	if maxLen < len(value) {
+		byteLen = maxLen
+	} else {
+		byteLen = len(value)
+	}
+	buffer[pos+1] = byte(byteLen)
+	copy(buffer[pos+2:], []byte(value)[:byteLen])
 	return buffer
+}
+
+//GetStringAt Get String
+func (s7 *Helper) GetStringAt(buffer []byte, pos int) string {
+	l := uint8(buffer[pos+1])
+	return string(buffer[pos+2 : pos+2+int(l)])
+}
+
+//SetWStringAt Set String (WString)
+func (s7 *Helper) SetWStringAt(buffer []byte, pos int, maxLen int, value string) []byte {
+	chars := []rune(value)
+	var sLen int
+	if maxLen < len(value) {
+		sLen = maxLen
+	} else {
+		sLen = len(value)
+	}
+	s7.SetValueAt(buffer, pos+0, int16(maxLen))
+	s7.SetValueAt(buffer, pos+2, int16(sLen))
+	for i, c := range chars {
+		if i >= sLen {
+			return buffer
+		}
+		s7.SetValueAt(buffer, pos+4+i*2, uint16(c))
+	}
+	return buffer
+}
+
+//GetWStringAt Get WString
+func (s7 *Helper) GetWStringAt(buffer []byte, pos int) string {
+	var l, max int16
+	var i int
+	var s string
+	s7.GetValueAt(buffer, pos+0, &max)
+	s7.GetValueAt(buffer, pos+2, &l)
+	bs := buffer[pos+4:]
+	for i < int(l) {
+		var c uint16
+		s7.GetValueAt(bs, 0, &c)
+		bs = bs[2:]
+		s += fmt.Sprintf("%c", c)
+		i++
+	}
+	return s
 }
 
 //GetCharsAt Get Array of char (S7 ARRAY OF CHARS)

@@ -224,9 +224,10 @@ func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLe
 		request.Data[29] = byte(address & 0x0FF)
 		address = address >> 8
 		request.Data[28] = byte(address & 0x0FF)
+    var response *ProtocolDataUnit
+		response, sendError := mb.send(&request)
+		err = sendError
 
-		var response *ProtocolDataUnit
-		response, err = mb.send(&request)
 		if err == nil {
 			if size := len(response.Data); size < 25 {
 				err = fmt.Errorf(ErrorText(errIsoInvalidDataSize)+"'%v'", len(response.Data))
@@ -372,7 +373,7 @@ func (mb *client) writeArea(area int, dbnumber int, start int, amount int, wordl
 }
 
 //DBRead
-func (mb *client) Read(variable string) (value interface{}, err error) {
+func (mb *client) Read(variable string, buffer []byte) (value interface{}, err error) {
 	variable = strings.ToUpper(variable)              //upper
 	variable = strings.Replace(variable, " ", "", -1) //remove spaces
 
@@ -381,7 +382,6 @@ func (mb *client) Read(variable string) (value interface{}, err error) {
 		return
 	}
 	//var area, dbNumber, start, amount, wordLen int
-	var buffer []byte
 	switch valueArea := variable[0:2]; valueArea {
 	case "EB": //input byte
 	case "EW": //input word

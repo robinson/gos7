@@ -114,6 +114,10 @@ func (mb *tcpTransporter) Send(request []byte) (response []byte, err error) {
 	if mb.Timeout > 0 {
 		timeout = mb.lastActivity.Add(mb.Timeout)
 	}
+	if mb.conn == nil {
+		err = fmt.Errorf("Connection to address %s is null", mb.Address)
+		return
+	}
 	if err = mb.conn.SetDeadline(timeout); err != nil {
 		return
 	}

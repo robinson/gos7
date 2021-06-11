@@ -467,6 +467,9 @@ func (mb *client) Read(variable string, buffer []byte) (value interface{}, err e
 //send the package of a pdu request and a pdu response, check for response error and verify the package
 func (mb *client) send(request *ProtocolDataUnit) (response *ProtocolDataUnit, err error) {
 	dataResponse, err := mb.transporter.Send(request.Data)
+	if err != nil {
+		return
+	}
 
 	if err = mb.packager.Verify(request.Data, dataResponse); err != nil {
 		return

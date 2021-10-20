@@ -3,7 +3,7 @@ Implementation of Siemens S7 protocol in golang
 
 Overview
 -------------------
-Since years, there are tons of driver/connector in both commercial and open source that support connect to S7 family PLC devices. GoS7 is just simple missing pieces in S7 protocol which implementing in with pure Go(aka golang) with a strongly faith that low-level communication would be impelement by low-level programming language which proximity to binary and memory. 
+Since years, there are tons of driver/connector in both commercial and open source that support to connect to S7 family PLC devices. GoS7 is just simple missing pieces in S7 protocol which implementing in with pure Go(aka golang) with a strongly faith that the low-level communication would be impelement by low-level programming language which proximity to binary and memory. 
 
 The minimum supported go version is 1.13.
 

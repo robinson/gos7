@@ -41,7 +41,7 @@ var s7PDUNegogiationTelegram = []byte{
 	3, 0, 0, 25,
 	2, 240, 128, // TPKT + COTP (see above for info)
 	50, 1, 0, 0, 4, 0, 0, 8, 0, 0, 240, 0, 0, 1, 0, 1,
-	1, 30} // PDU Length Requested = HI-LO Here Default 480 bytes
+	1, 224} // PDU Length Requested = HI-LO Here Default 480 bytes
 
 // S7 Read/Write Request Header (contains also ISO Header and COTP Header)
 var s7ReadWriteTelegram = []byte{ // 31-35 bytes

@@ -78,9 +78,14 @@ func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err erro
 			itemDataSize = dataItems[i].Amount * 2
 			binary.BigEndian.PutUint16(s7ItemWrite[2:], uint16(itemDataSize))
 			break
+		case s7wlreal:
+			s7ItemWrite[1] = tsResReal // real
+			itemDataSize = dataItems[i].Amount * dataSizeByte(dataItems[i].WordLen)
+			binary.BigEndian.PutUint16(s7ItemWrite[2:], uint16(itemDataSize))
+			break
 		default:
 			s7ItemWrite[1] = tsResByte // byte/word/dword etc.
-			itemDataSize = dataItems[i].Amount
+			itemDataSize = dataItems[i].Amount * dataSizeByte(dataItems[i].WordLen)
 			binary.BigEndian.PutUint16(s7ItemWrite[2:], uint16(itemDataSize*8))
 			break
 

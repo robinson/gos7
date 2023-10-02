@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"../../gos7"
+	"github.com/robinson/gos7"
 )
 
-//ClientTestAll client test all
+// ClientTestAll client test all
 func ClientTestAll(t *testing.T, client gos7.Client) {
 	//write value to 100
 	ClientTestWriteIntDB(t, client, 100)
@@ -34,7 +34,7 @@ func ClientTestAll(t *testing.T, client gos7.Client) {
 	ClientAGReadMulti(t, client)
 }
 
-//ClientTestWriteIntDB client test write int
+// ClientTestWriteIntDB client test write int
 func ClientTestWriteIntDB(t *testing.T, client gos7.Client, value int16) {
 	address := 2710
 	start := 8
@@ -51,7 +51,7 @@ func ClientTestWriteIntDB(t *testing.T, client gos7.Client, value int16) {
 	AssertEquals(t, err, nil) // send success then the response in position 6 will be 128
 }
 
-//ClientTestReadIntDB client test read int
+// ClientTestReadIntDB client test read int
 func ClientTestReadIntDB(t *testing.T, client gos7.Client) {
 	address := 2710
 	start := 8
@@ -68,7 +68,7 @@ func ClientTestReadIntDB(t *testing.T, client gos7.Client) {
 	AssertEquals(t, 100, int(result))
 }
 
-//ClientTestDirectory test directory functions, list all blocks
+// ClientTestDirectory test directory functions, list all blocks
 func ClientTestDirectory(t *testing.T, client gos7.Client) {
 	//var bl gos7.S7BlocksList
 	bl, err := client.PGListBlocks()
@@ -81,7 +81,7 @@ func ClientTestDirectory(t *testing.T, client gos7.Client) {
 	AssertEquals(t, len(bl.FBList), 81)
 }
 
-//ClientTestGetCPUInfo get the CPU info
+// ClientTestGetCPUInfo get the CPU info
 func ClientTestGetCPUInfo(t *testing.T, client gos7.Client) {
 	info, err := client.GetCPUInfo()
 	if err != nil {
@@ -90,7 +90,7 @@ func ClientTestGetCPUInfo(t *testing.T, client gos7.Client) {
 	AssertEquals(t, strings.Index(info.SerialNumber, "0118701484"), 0) //return serial should be "0118701484        ", some space
 }
 
-//ClientTestGetAGBlockInfo get AG block info
+// ClientTestGetAGBlockInfo get AG block info
 func ClientTestGetAGBlockInfo(t *testing.T, client gos7.Client) {
 	info, err := client.GetAgBlockInfo(65, 2710)
 	if err != nil {
@@ -99,7 +99,7 @@ func ClientTestGetAGBlockInfo(t *testing.T, client gos7.Client) {
 	AssertEquals(t, info.CodeDate, "22.01.2018")
 }
 
-//ClientPLCGetStatus get PLC status
+// ClientPLCGetStatus get PLC status
 func ClientPLCGetStatus(t *testing.T, client gos7.Client) {
 	status, err := client.PLCGetStatus()
 	if err != nil {
@@ -108,7 +108,7 @@ func ClientPLCGetStatus(t *testing.T, client gos7.Client) {
 	AssertEquals(t, status, 8) //8=running, 4=stop, 0=unknown
 }
 
-//ClientAGReadMulti read multi client
+// ClientAGReadMulti read multi client
 func ClientAGReadMulti(t *testing.T, client gos7.Client) {
 	data1 := make([]byte, 1024)
 	data2 := make([]byte, 1024)
@@ -157,7 +157,7 @@ func ClientAGReadMulti(t *testing.T, client gos7.Client) {
 	AssertEquals(t, value3, uint16(0))
 }
 
-//ClientAGWriteMulti read multi client
+// ClientAGWriteMulti read multi client
 func ClientAGWriteMulti(t *testing.T, client gos7.Client) {
 	data1 := make([]byte, 1024)
 	data2 := make([]byte, 1024)
@@ -209,7 +209,7 @@ func ClientAGWriteMulti(t *testing.T, client gos7.Client) {
 	AssertEquals(t, "", error1)
 }
 
-//AssertEquals helper
+// AssertEquals helper
 func AssertEquals(t *testing.T, expected, actual interface{}) {
 	_, file, line, ok := runtime.Caller(1)
 	if !ok {

@@ -4,14 +4,14 @@ package test
 // This software may be modified and distributed under the terms
 // of the BSD license. See the LICENSE file for details.
 import (
+	"fmt"
 	"log"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
-	"../../gos7"
-	"sync"
-	"fmt"
+	"github.com/robinson/gos7"
 )
 
 const (
@@ -74,7 +74,7 @@ func TestMultiTCPClient(t *testing.T) {
 	client, ok := cli.(gos7.Client)
 	if exist && ok {
 		buf := make([]byte, 255)
-		client.AGReadDB(200, 34, 4,  buf)
+		client.AGReadDB(200, 34, 4, buf)
 		var s7 gos7.Helper
 		var result float32
 		s7.GetValueAt(buf, 0, &result)

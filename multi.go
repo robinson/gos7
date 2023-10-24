@@ -162,8 +162,11 @@ func (mb *client) AGReadMulti(dataItems []S7DataItem, itemsCount int) (err error
 
 		// Adjusts the offset
 		var addr int
-		if dataItems[i].WordLen == s7wlbit || dataItems[i].WordLen == s7wlcounter || dataItems[i].WordLen == s7wltimer {
+		if dataItems[i].WordLen == s7wlcounter || dataItems[i].WordLen == s7wltimer {
 			addr = dataItems[i].Start
+		} else if dataItems[i].WordLen == s7wlbit {
+			addr = dataItems[i].Start << 3
+			addr += dataItems[i].Bit // Add Bit addr
 		} else {
 			addr = dataItems[i].Start * 8
 		}

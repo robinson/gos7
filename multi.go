@@ -14,6 +14,7 @@ type S7DataItem struct {
 	WordLen  int
 	DBNumber int
 	Start    int
+	Bit      int
 	Amount   int
 	Data     []byte
 	Error    string

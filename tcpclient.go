@@ -48,10 +48,25 @@ func NewTCPClientHandler(address string, rack int, slot int) *TCPClientHandler {
 	h.setConnectionParameters(address, 0x0100, remoteTSAP)
 	return h
 }
-
+// NewTCPClientHandlerWithConnectType allocates a new TCPClientHandler with connection type.
+func NewTCPClientHandlerWithConnectType(address string, rack int, slot int, connectType int) *TCPClientHandler {
+	h := &TCPClientHandler{}
+	h.Address = address
+	h.Timeout = tcpTimeout
+	h.IdleTimeout = tcpIdleTimeout
+	h.ConnectionType = connectType
+	remoteTSAP := uint16(h.ConnectionType)<<8 + (uint16(rack) * 0x20) + uint16(slot)
+	h.setConnectionParameters(address, 0x0100, remoteTSAP)
+	return h
+}
 //TCPClient creator for a TCP client with address, rack and slot, implement from interface client
 func TCPClient(address string, rack int, slot int) Client {
 	handler := NewTCPClientHandler(address, rack, slot)
+	return NewClient(handler)
+}
+//TCPClientWithConnectType creator for a TCP client with address, rack, slot and connect type, implement from interface client
+func TCPClientWithConnectType(address string, rack int, slot int, connectType int) Client {
+	handler := NewTCPClientHandlerWithConnectType(address, rack, slot, connectType)
 	return NewClient(handler)
 }
 

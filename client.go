@@ -224,7 +224,7 @@ func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLe
 		request.Data[29] = byte(address & 0x0FF)
 		address = address >> 8
 		request.Data[28] = byte(address & 0x0FF)
-    var response *ProtocolDataUnit
+		var response *ProtocolDataUnit
 		response, sendError := mb.send(&request)
 		err = sendError
 
@@ -431,10 +431,72 @@ func (mb *client) Read(variable string, buffer []byte) (value interface{}, err e
 		}
 	default:
 		switch otherArea := variable[0:1]; otherArea {
-		case "E":
+		case "E": //input
+			fallthrough
 		case "I": //input
-		case "A":
+			var startByte int64
+			var bit int64
+
+			inputArray := strings.SplitN(variable[1:], ".", 2)
+			if len(inputArray) != 2 || inputArray[0] == "" || inputArray[1] == "" {
+				err = fmt.Errorf("input variable is invalid")
+				return
+			}
+
+			startByte, err = strconv.ParseInt(inputArray[0], 10, 16)
+			if err != nil {
+				return
+			}
+			bit, err = strconv.ParseInt(inputArray[1], 10, 16)
+			if err != nil {
+				return
+			}
+			if bit > 7 || bit < 0 {
+				err = fmt.Errorf("input bit %d is invalid. Must be 0-7", bit)
+				return
+			}
+
+			err = mb.AGReadEB(int(startByte), 1, buffer)
+			if err != nil {
+				return
+			}
+			helper := Helper{}
+			helper.GetBoolAt(buffer[0], uint(bit))
+			return
+		case "A": //output
+			fallthrough
 		case "0": //output
+			fallthrough
+		case "Q": //output
+			var startByte int64
+			var bit int64
+
+			outputArray := strings.SplitN(variable[1:], ".", 2)
+			if len(outputArray) != 2 || outputArray[0] == "" || outputArray[1] == "" {
+				err = fmt.Errorf("output variable is invalid")
+				return
+			}
+
+			startByte, err = strconv.ParseInt(outputArray[0], 10, 16)
+			if err != nil {
+				return
+			}
+			bit, err = strconv.ParseInt(outputArray[1], 10, 16)
+			if err != nil {
+				return
+			}
+			if bit > 7 || bit < 0 {
+				err = fmt.Errorf("output bit %d is invalid. Must be 0-7", bit)
+				return
+			}
+
+			err = mb.AGReadAB(int(startByte), 1, buffer)
+			if err != nil {
+				return
+			}
+			helper := Helper{}
+			helper.GetBoolAt(buffer[0], uint(bit))
+			return
 		case "M": //memory
 		case "T": //timer
 			startByte, _ := strconv.ParseInt(string(variable[1:]), 10, 16)

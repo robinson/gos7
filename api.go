@@ -83,6 +83,6 @@ type Client interface {
 	/***************end API AG***************/
 
 	/****************area API****************/
-	writeArea(area int, dbnumber int, start int, amount int, wordlen int, buffer []byte) (err error)
-	readArea(area int, dbNumber int, start int, amount int, wordLen int, buffer []byte) (err error)
+	WriteArea(area int, dbnumber int, start int, amount int, wordlen int, buffer []byte) (err error)
+	ReadArea(area int, dbNumber int, start int, amount int, wordLen int, buffer []byte) (err error)
 }

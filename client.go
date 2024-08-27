@@ -71,47 +71,47 @@ func NewClient2(packager Packager, transporter Transporter) Client {
 	return &client{packager: packager, transporter: transporter}
 }
 
-//implement of the interface AGReadDB
+// implement of the interface AGReadDB
 func (mb *client) AGReadDB(dbnumber int, start int, size int, buffer []byte) (err error) {
 	return mb.readArea(s7areadb, dbnumber, start, size, s7wlbyte, buffer)
 }
 
-//implement of the interface AGWriteDB
+// implement of the interface AGWriteDB
 func (mb *client) AGWriteDB(dbNumber int, start int, size int, buffer []byte) (err error) {
 	return mb.writeArea(s7areadb, dbNumber, start, size, s7wlbyte, buffer)
 }
 
-//implement of the interface AGReadMB
+// implement of the interface AGReadMB
 func (mb *client) AGReadMB(start int, size int, buffer []byte) (err error) {
 	return mb.readArea(s7areamk, 0, start, size, s7wlbyte, buffer)
 }
 
-//implement of the interface AGWriteMB
+// implement of the interface AGWriteMB
 func (mb *client) AGWriteMB(start int, size int, buffer []byte) (err error) {
 	return mb.writeArea(s7areamk, 0, start, size, s7wlbyte, buffer)
 }
 
-//implement of the interface AGReadEB
+// implement of the interface AGReadEB
 func (mb *client) AGReadEB(start int, size int, buffer []byte) (err error) {
 	return mb.readArea(s7areape, 0, start, size, s7wlbyte, buffer)
 }
 
-//implement of the interface AGWriteEB
+// implement of the interface AGWriteEB
 func (mb *client) AGWriteEB(start int, size int, buffer []byte) (err error) {
 	return mb.writeArea(s7areape, 0, start, size, s7wlbyte, buffer)
 }
 
-//implement of the interface AGReadAB
+// implement of the interface AGReadAB
 func (mb *client) AGReadAB(start int, size int, buffer []byte) (err error) {
 	return mb.readArea(s7areapa, 0, start, size, s7wlbyte, buffer)
 }
 
-//implement of the interface AGWriteAB
+// implement of the interface AGWriteAB
 func (mb *client) AGWriteAB(start int, size int, buffer []byte) (err error) {
 	return mb.writeArea(s7areapa, 0, start, size, s7wlbyte, buffer)
 }
 
-//implement of the interface AGReadTM - read timer
+// implement of the interface AGReadTM - read timer
 func (mb *client) AGReadTM(start int, amount int, buffer []byte) (err error) {
 	sbuffer := make([]byte, amount*2)
 	err = mb.readArea(s7areatm, 0, start, amount, s7wltimer, sbuffer)
@@ -123,7 +123,7 @@ func (mb *client) AGReadTM(start int, amount int, buffer []byte) (err error) {
 	return err
 }
 
-//implement of the interface AGWriteTM - write timer
+// implement of the interface AGWriteTM - write timer
 func (mb *client) AGWriteTM(start int, amount int, buffer []byte) (err error) {
 	sbuffer := make([]byte, amount*2)
 	for c := 0; c < amount; c++ {
@@ -134,7 +134,7 @@ func (mb *client) AGWriteTM(start int, amount int, buffer []byte) (err error) {
 	return err
 }
 
-//implement of the interface AGReadCT - read counter
+// implement of the interface AGReadCT - read counter
 func (mb *client) AGReadCT(start int, amount int, buffer []byte) (err error) {
 	sbuffer := make([]byte, amount*2)
 	err = mb.readArea(s7areact, 0, start, amount, s7wlcounter, sbuffer)
@@ -146,7 +146,7 @@ func (mb *client) AGReadCT(start int, amount int, buffer []byte) (err error) {
 	return err
 }
 
-//implement of the interface AGWriteCT - write counter
+// implement of the interface AGWriteCT - write counter
 func (mb *client) AGWriteCT(start int, amount int, buffer []byte) (err error) {
 	sbuffer := make([]byte, amount*2)
 	for c := 0; c < amount; c++ {
@@ -157,7 +157,7 @@ func (mb *client) AGWriteCT(start int, amount int, buffer []byte) (err error) {
 	return err
 }
 
-//read generic area, pass result into a buffer
+// read generic area, pass result into a buffer
 func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLen int, buffer []byte) (err error) {
 	var address, numElements, maxElements, totElements, sizeRequested int
 	offset := 0
@@ -224,7 +224,7 @@ func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLe
 		request.Data[29] = byte(address & 0x0FF)
 		address = address >> 8
 		request.Data[28] = byte(address & 0x0FF)
-    var response *ProtocolDataUnit
+		var response *ProtocolDataUnit
 		response, sendError := mb.send(&request)
 		err = sendError
 
@@ -248,13 +248,13 @@ func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLe
 	return
 }
 
-//writeArea write generic area into PLC with following parameters:
-//1.area: s7areape/s7areapa/s7areamk/s7areadb/s7areact/s7areatm
-//2.dbnumber: specify dbnumber, to use in write DB area, otherwise = 0
-//3.start: start of the address
-//4.amount: amount of the address
-//5.wordlen: bit/byte/word/dword/real/counter/timer
-//6.buffer: a byte array input for writing
+// writeArea write generic area into PLC with following parameters:
+// 1.area: s7areape/s7areapa/s7areamk/s7areadb/s7areact/s7areatm
+// 2.dbnumber: specify dbnumber, to use in write DB area, otherwise = 0
+// 3.start: start of the address
+// 4.amount: amount of the address
+// 5.wordlen: bit/byte/word/dword/real/counter/timer
+// 6.buffer: a byte array input for writing
 func (mb *client) writeArea(area int, dbnumber int, start int, amount int, wordlen int, buffer []byte) (err error) {
 	var address, numElements, maxElements, totElements, dataSize, isoSize, length int
 	offset := 0
@@ -372,7 +372,7 @@ func (mb *client) writeArea(area int, dbnumber int, start int, amount int, wordl
 	return
 }
 
-//DBRead
+// DBRead
 func (mb *client) Read(variable string, buffer []byte) (value interface{}, err error) {
 	variable = strings.ToUpper(variable)              //upper
 	variable = strings.Replace(variable, " ", "", -1) //remove spaces
@@ -464,7 +464,7 @@ func (mb *client) Read(variable string, buffer []byte) (value interface{}, err e
 	return
 }
 
-//send the package of a pdu request and a pdu response, check for response error and verify the package
+// send the package of a pdu request and a pdu response, check for response error and verify the package
 func (mb *client) send(request *ProtocolDataUnit) (response *ProtocolDataUnit, err error) {
 	dataResponse, err := mb.transporter.Send(request.Data)
 	if err != nil {
@@ -487,7 +487,15 @@ func (mb *client) send(request *ProtocolDataUnit) (response *ProtocolDataUnit, e
 	return response, err
 }
 
-//responseError get response error from pdu return S7Error with high and low byte
+func (mb *client) WriteArea(area int, dbnumber int, start int, amount int, wordlen int, buffer []byte) (err error) {
+	return mb.WriteArea(area, dbnumber, start, amount, wordlen, buffer)
+}
+
+func (mb *client) ReadArea(area int, dbNumber int, start int, amount int, wordLen int, buffer []byte) (err error) {
+	return mb.ReadArea(area, dbNumber, start, amount, wordLen, buffer)
+}
+
+// responseError get response error from pdu return S7Error with high and low byte
 func responseError(response *ProtocolDataUnit) error {
 	s7Error := &S7Error{}
 	if response.Data != nil && len(response.Data) > 0 {
@@ -509,7 +517,7 @@ func responseError(response *ProtocolDataUnit) error {
 	return s7Error
 }
 
-//dataSize to number of byte accordingly
+// dataSize to number of byte accordingly
 func dataSizeByte(wordLength int) int {
 	switch wordLength {
 	case s7wlbit:

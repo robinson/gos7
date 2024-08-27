@@ -487,10 +487,12 @@ func (mb *client) send(request *ProtocolDataUnit) (response *ProtocolDataUnit, e
 	return response, err
 }
 
+// add WriteArea
 func (mb *client) WriteArea(area int, dbnumber int, start int, amount int, wordlen int, buffer []byte) (err error) {
 	return mb.WriteArea(area, dbnumber, start, amount, wordlen, buffer)
 }
 
+// add ReadArea
 func (mb *client) ReadArea(area int, dbNumber int, start int, amount int, wordLen int, buffer []byte) (err error) {
 	return mb.ReadArea(area, dbNumber, start, amount, wordLen, buffer)
 }

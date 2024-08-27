@@ -489,12 +489,12 @@ func (mb *client) send(request *ProtocolDataUnit) (response *ProtocolDataUnit, e
 
 // add api WriteArea
 func (mb *client) WriteArea(area int, dbnumber int, start int, amount int, wordlen int, buffer []byte) (err error) {
-	return mb.WriteArea(area, dbnumber, start, amount, wordlen, buffer)
+	return mb.writeArea(area, dbnumber, start, amount, wordlen, buffer)
 }
 
 // add api ReadArea
 func (mb *client) ReadArea(area int, dbNumber int, start int, amount int, wordLen int, buffer []byte) (err error) {
-	return mb.ReadArea(area, dbNumber, start, amount, wordLen, buffer)
+	return mb.readArea(area, dbNumber, start, amount, wordLen, buffer)
 }
 
 // responseError get response error from pdu return S7Error with high and low byte

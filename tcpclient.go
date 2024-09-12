@@ -130,7 +130,7 @@ func (mb *tcpTransporter) Send(request []byte) (response []byte, err error) {
 		timeout = mb.lastActivity.Add(mb.Timeout)
 	}
 	if mb.conn == nil {
-		err = fmt.Errorf("Connection to address %s is null", mb.Address)
+		err = fmt.Errorf("connection to address %s is null", mb.Address)
 		return
 	}
 	if err = mb.conn.SetDeadline(timeout); err != nil {
@@ -324,5 +324,19 @@ func (mb *tcpTransporter) closeIdle() {
 
 //reserve for future use, need to verify the request and response
 func (mb *tcpPackager) Verify(request []byte, response []byte) (err error) {
+	// Verify PDU Reference (sequence counter)
+	// For protocol structure see: http://gmiru.com/article/s7comm/ (chapter 2.1 Header)
+	var requestSequence uint16 = binary.BigEndian.Uint16(request[11:])
+	var responseSequence uint16 = binary.BigEndian.Uint16(response[11:])
+	
+	// log request/reponseSequence (only debug)
+	if (responseSequence != requestSequence) {
+		// log error
+		err = fmt.Errorf(
+			"s7: request sequence (%d) and response sequence (%d) do not match. Response is discarded",
+			requestSequence,
+			responseSequence,
+		)
+	}
 	return
 }

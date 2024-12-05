@@ -8,7 +8,7 @@ import (
 	"fmt"
 )
 
-//implement PLC hot start interface
+// implement PLC hot start interface
 func (mb *client) PLCHotStart() error {
 	requestData := make([]byte, len(s7HotStartTelegram))
 	copy(requestData, s7HotStartTelegram)
@@ -16,10 +16,10 @@ func (mb *client) PLCHotStart() error {
 	//send
 	response, err := mb.send(&request)
 	if err == nil {
-		if length := len(response.Data); length > 18 { // 18 is the minimum expected
+		if length := len(response.Data); length >= 20 { // 20 is the minimum expected
 			if int(response.Data[19]) != pduStart {
 				err = fmt.Errorf(ErrorText(errCliCannotStartPLC))
-			} else {
+			} else if length >= 21 {
 				if int(response.Data[20]) == pduAlreadyStarted {
 					err = fmt.Errorf(ErrorText(errCliAlreadyRun))
 				} else {
@@ -33,7 +33,7 @@ func (mb *client) PLCHotStart() error {
 	return err
 }
 
-//implement of PLC Colde Start interface
+// implement of PLC Colde Start interface
 func (mb *client) PLCColdStart() error {
 	requestData := make([]byte, len(s7ColdStartTelegram))
 	copy(requestData, s7ColdStartTelegram)
@@ -41,10 +41,10 @@ func (mb *client) PLCColdStart() error {
 	//send
 	response, err := mb.send(&request)
 	if err == nil {
-		if length := len(response.Data); length > 18 { // 18 is the minimum expected
+		if length := len(response.Data); length >= 20 { // 20 is the minimum expected
 			if int(response.Data[19]) != pduStart {
 				err = fmt.Errorf(ErrorText(errCliCannotStartPLC))
-			} else {
+			} else if length >= 21 {
 				if int(response.Data[20]) == pduAlreadyStarted {
 					err = fmt.Errorf(ErrorText(errCliAlreadyRun))
 				} else {
@@ -65,11 +65,11 @@ func (mb *client) PLCStop() error {
 	//send
 	response, err := mb.send(&request)
 	if err == nil {
-		if length := len(response.Data); length > 18 { // 18 is the minimum expected
+		if length := len(response.Data); length >= 20 { // 20 is the minimum expected
 			if int(response.Data[19]) != pduStop {
 				err = fmt.Errorf(ErrorText(errCliCannotStopPLC))
-			} else {
-				if int(response.Data[20]) == pduAlreadyStarted {
+			} else if length >= 21 {
+				if int(response.Data[20]) == pduAlreadyStopped {
 					err = fmt.Errorf(ErrorText(errCliAlreadyStop))
 				} else {
 					err = fmt.Errorf(ErrorText(errCliCannotStopPLC))
@@ -82,7 +82,6 @@ func (mb *client) PLCStop() error {
 	return err
 }
 
-//
 func (mb *client) PLCGetStatus() (status int, err error) {
 	//initialize
 	requestData := make([]byte, len(s7GetStatusTelegram))

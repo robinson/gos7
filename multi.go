@@ -110,8 +110,6 @@ func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err erro
 	binary.BigEndian.PutUint16(s7Multi[2:], uint16(offset))      // Whole size
 	binary.BigEndian.PutUint16(s7Multi[15:], uint16(dataLength)) // Whole size
 	request := NewProtocolDataUnit(s7Multi)
-	//debug
-	fmt.Printf("%d", s7Multi)
 	//send
 	response, err := mb.send(&request)
 	if err == nil {

@@ -93,6 +93,10 @@ func (mb *client) PLCGetStatus() (status int, err error) {
 	if err == nil {
 		if length := len(response.Data); length > 30 { // 30 is the minimum expected
 			if result := binary.BigEndian.Uint16(response.Data[27:]); result == 0 {
+				if length < 45 { // A successful response must include the status byte.
+					err = fmt.Errorf("%s", ErrorText(errIsoInvalidPDU))
+					return
+				}
 				if int(response.Data[44]) == 0 || int(response.Data[44]) == 8 || int(response.Data[44]) == 4 {
 					status = int(response.Data[44])
 				} else {

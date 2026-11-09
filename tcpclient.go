@@ -30,6 +30,9 @@ const (
 	connectionTypePG    = 1 // Connect to the PLC as a PG
 	connectionTypeOP    = 2 // Connect to the PLC as an OP
 	connectionTypeBasic = 3 // Basic connection
+	// S7 PDU header behind TPKT and COTP
+	s7ProtocolID   = 0x32 // First byte of every S7 PDU
+	s7PDURefOffset = 11   // PDU reference, 2 bytes big endian, echoed by the PLC
 )
 
 // TCPClientHandler implements Packager and Transporter interface.
@@ -145,9 +148,29 @@ func (mb *tcpTransporter) Send(request []byte) (response []byte, err error) {
 	if _, err = mb.conn.Write(request); err != nil {
 		return
 	}
-	done := false
 	data := make([]byte, tcpMaxLength)
-	length := 0
+	for {
+		var length int
+		if length, err = mb.receive(data); err != nil {
+			return nil, err
+		}
+		response = data[0:length]
+		mb.logf("s7: received % x\n", response)
+		// A reply carrying another PDU reference answers an earlier request,
+		// typically one that timed out. Taking it for the answer to this
+		// request would hand the caller foreign data, so drop it and keep
+		// waiting for the matching reply until the deadline expires.
+		if !pduReferenceMismatch(request, response) {
+			return response, nil
+		}
+		mb.logf("s7: discarding reply with PDU reference 0x%04x, request has 0x%04x", pduReference(response), pduReference(request))
+	}
+}
+
+// receive reads one ISO-on-TCP telegram (TPKT, COTP and S7 payload) into data
+// and returns its length. Telegrams consisting of a bare COTP header are skipped.
+func (mb *tcpTransporter) receive(data []byte) (length int, err error) {
+	done := false
 	for !done && err == nil {
 		// Get TPKT (4 bytes)
 		if _, err = io.ReadFull(mb.conn, data[:4]); err != nil {
@@ -177,11 +200,6 @@ func (mb *tcpTransporter) Send(request []byte) (response []byte, err error) {
 	mb.LastPDUType = data[5] // Stores PDU Type, we need it
 	// Receives the S7 Payload
 	_, err = io.ReadFull(mb.conn, data[7:length])
-	if err != nil {
-		return
-	}
-	response = data[0:length]
-	mb.logf("s7: received % x\n", response)
 	return
 }
 
@@ -333,7 +351,31 @@ func (mb *tcpTransporter) closeIdle() {
 	}
 }
 
-// reserve for future use, need to verify the request and response
+// isS7PDU reports whether the telegram carries an S7 PDU behind TPKT and COTP.
+// COTP connection requests/confirms and truncated telegrams do not.
+func isS7PDU(telegram []byte) bool {
+	return len(telegram) >= s7PDURefOffset+2 && telegram[isoHSize] == s7ProtocolID
+}
+
+// pduReference returns the PDU reference of a telegram for which isS7PDU holds.
+func pduReference(telegram []byte) uint16 {
+	return binary.BigEndian.Uint16(telegram[s7PDURefOffset:])
+}
+
+// pduReferenceMismatch reports whether response is an S7 PDU that does not
+// echo the PDU reference of the S7 request, i.e. it answers another request.
+func pduReferenceMismatch(request, response []byte) bool {
+	return isS7PDU(request) && isS7PDU(response) && pduReference(request) != pduReference(response)
+}
+
+// Verify checks that the response answers the request: the PDU reference the
+// client stamped into the request header must come back in the response.
+// A response with another reference belongs to an earlier request, for
+// example a late answer after a timeout, and must not be interpreted as the
+// answer to this one.
 func (mb *tcpPackager) Verify(request []byte, response []byte) (err error) {
+	if pduReferenceMismatch(request, response) {
+		err = fmt.Errorf("%s: request 0x%04x, response 0x%04x", ErrorText(errCliPDUReferenceMismatch), pduReference(request), pduReference(response))
+	}
 	return
 }

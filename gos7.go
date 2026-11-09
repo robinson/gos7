@@ -16,7 +16,8 @@ type S7Error struct {
 
 // Packager specifies the communication layer.
 type Packager interface {
-	//reserve for future use
+	// Verify checks that the response answers the request, for example by
+	// comparing the PDU reference, and returns an error if it does not.
 	Verify(request []byte, response []byte) (err error)
 }
 

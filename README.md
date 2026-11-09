@@ -5,7 +5,7 @@ Overview
 -------------------
 For years, numerous drivers/connectors, available in both commercial and open source domains, have supported the connection to S7 family PLC devices. GoS7 fills the gaps in the S7 protocol, implementing it with pure Go (also known as golang). There is a strong belief that low-level communication should be implemented with a low-level programming language that is close to binary and memory.
 
-The minimum supported Go version is 1.13.
+The minimum supported Go version is 1.21 (see `go.mod`).
 
 Functions
 -------------------
@@ -71,6 +71,15 @@ var result uint16
 s7.GetValueAt(buf, 0, &result)	 
   
 ```
+Request/response matching
+----------
+Every request carries a running PDU reference and the reply has to echo it. A reply with another
+reference (for example a late answer after a timeout at a slow gateway) is discarded by the TCP
+transporter, which keeps waiting for the matching reply until the timeout expires. Transporters other
+than the TCP one get the error `CLI : PDU reference mismatch` from the packager. A read reply whose item
+does not hold the requested number of bytes is rejected with `CLI : Invalid data size received` and
+leaves the caller's buffer untouched.
+
 References
 ----------
 - libnodave http://libnodave.sourceforge.net/

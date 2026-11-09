@@ -77,11 +77,9 @@ func TCPClientWithConnectType(address string, rack int, slot int, connectType in
 	return NewClient(handler)
 }
 
-// tcpPackager implements Packager interface.
-type tcpPackager struct {
-	//reserve for future use, this package should be pass into trans ID, pack ID
-	//or somethingelse to verify the request and response
-}
+// tcpPackager implements Packager interface. Its Verify matches the response
+// to the request by the S7 PDU reference.
+type tcpPackager struct{}
 
 // tcpTransporter implements Transporter interface.
 type tcpTransporter struct {

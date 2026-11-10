@@ -51,7 +51,7 @@ var s7ReadWriteTelegram = []byte{ // 31-35 bytes
 	50,   // S7 Protocol ID
 	1,    // Job Type
 	0, 0, // Redundancy identification
-	5, 0, // PDU Reference //lth this use for request S7 packet id
+	5, 0, // PDU Reference, overwritten by client.send with a running reference
 	0, 14, // Parameters Length
 	0, 0, // Data Length = Size(bytes) + 4
 	4,              // Function 4 Read Var, 5 Write Var
@@ -77,7 +77,7 @@ var s7MultiReadHeaderTelegram = []byte{
 	50,   // S7 Protocol ID
 	1,    // Job Type
 	0, 0, // Redundancy identification
-	5, 0, // PDU Reference
+	5, 0, // PDU Reference, overwritten by client.send
 	0, 14, // Parameters Length
 	0, 0, // Data Length = Size(bytes) + 4
 	4, // Function 4 Read Var, 5 Write Var
@@ -102,7 +102,7 @@ var s7MultiWriteHeaderTelegram = []byte{
 	50,   // S7 Protocol ID
 	1,    // Job Type
 	0, 0, // Redundancy identification
-	5, 0, // PDU Reference
+	5, 0, // PDU Reference, overwritten by client.send
 	0, 14, // Parameters Length (idx 13)
 	0, 0, // Data Length = Size(bytes) + 4 (idx 15)
 	5, // Function 5 Write Var

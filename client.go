@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 const (
@@ -59,6 +60,7 @@ type ClientHandler interface {
 type client struct {
 	packager    Packager
 	transporter Transporter
+	pduRef      uint32 // running PDU reference, see setPDUReference
 }
 
 // NewClient creates a new s7 client with given backend handler.
@@ -234,6 +236,10 @@ func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLe
 			} else {
 				if response.Data[21] != 0xFF {
 					err = fmt.Errorf(ErrorText(CPUError(uint(response.Data[21]))))
+				} else if itemSize := readItemSize(response.Data); itemSize != sizeRequested || size < 25+sizeRequested {
+					// The item does not hold the requested bytes. Copying anyway would
+					// fill the caller's buffer with bytes beyond the end of the telegram.
+					err = fmt.Errorf("%s: requested %d bytes, item holds %d bytes in a %d byte telegram", ErrorText(errCliInvalidDataSizeRecvd), sizeRequested, itemSize, size)
 				} else {
 					//copy response to buffer
 					copy(buffer[offset:offset+sizeRequested], response.Data[25:25+sizeRequested])
@@ -246,6 +252,18 @@ func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLe
 		start += numElements * wordSize
 	}
 	return
+}
+
+// readItemSize returns the number of data bytes a Read Var response item
+// announces in bytes 23-24. The length field counts bits for the byte, word
+// and integer transport sizes and bytes for bit, octet string and real
+// (same convention as AGReadMulti).
+func readItemSize(response []byte) int {
+	size := int(binary.BigEndian.Uint16(response[23:]))
+	if ts := response[22]; ts != tsResOctet && ts != tsResReal && ts != tsResBit {
+		size >>= 3
+	}
+	return size
 }
 
 //writeArea write generic area into PLC with following parameters:
@@ -466,6 +484,7 @@ func (mb *client) Read(variable string, buffer []byte) (value interface{}, err e
 
 //send the package of a pdu request and a pdu response, check for response error and verify the package
 func (mb *client) send(request *ProtocolDataUnit) (response *ProtocolDataUnit, err error) {
+	mb.setPDUReference(request.Data)
 	dataResponse, err := mb.transporter.Send(request.Data)
 	if err != nil {
 		return
@@ -485,6 +504,18 @@ func (mb *client) send(request *ProtocolDataUnit) (response *ProtocolDataUnit, e
 	//check for error if any
 	err = responseError(response)
 	return response, err
+}
+
+// setPDUReference stamps the next PDU reference into an S7 request. The
+// telegram templates carry a fixed reference, which makes every reply look
+// like the answer to every request; with a running reference the transporter
+// and the packager can tell a late reply from the expected one.
+func (mb *client) setPDUReference(request []byte) {
+	if !isS7PDU(request) {
+		return
+	}
+	ref := uint16(atomic.AddUint32(&mb.pduRef, 1))
+	binary.BigEndian.PutUint16(request[s7PDURefOffset:], ref)
 }
 
 //responseError get response error from pdu return S7Error with high and low byte

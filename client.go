@@ -37,6 +37,10 @@ const (
 	s7CpuStatusRun     = 8
 	s7CpuStatusStop    = 4
 
+	// S7 PDU types (ROSCTR) whose header carries an error class and code
+	s7PDUTypeAck     = 0x02
+	s7PDUTypeAckData = 0x03
+
 	//size header
 	sizeHeaderRead  int = 31 // Header Size when Reading
 	sizeHeaderWrite int = 35 // Header Size when Writing
@@ -518,26 +522,22 @@ func (mb *client) setPDUReference(request []byte) {
 	binary.BigEndian.PutUint16(request[s7PDURefOffset:], ref)
 }
 
-//responseError get response error from pdu return S7Error with high and low byte
+// responseError returns the error class and code from the header of an Ack or
+// Ack_Data reply as an S7Error, or nil when the reply reports no error. Only
+// these two PDU types carry the error fields, at bytes 17-18 after the TPKT
+// and COTP headers.
 func responseError(response *ProtocolDataUnit) error {
-	s7Error := &S7Error{}
-	if response.Data != nil && len(response.Data) > 0 {
-		switch int(response.Data[1]) {
-		case 1:
-		case 7:
-			s7Error.High = response.Data[2]
-			s7Error.Low = response.Data[3]
-			break
-		case 2:
-		case 3:
-			s7Error.High = response.Data[10]
-			s7Error.Low = response.Data[11]
-			break
-		default:
-			return nil
+	data := response.Data
+	if len(data) < isoHSize+12 || data[isoHSize] != s7ProtocolID {
+		return nil
+	}
+	switch data[isoHSize+1] {
+	case s7PDUTypeAck, s7PDUTypeAckData:
+		if class, code := data[17], data[18]; class != 0 || code != 0 {
+			return &S7Error{High: class, Low: code}
 		}
 	}
-	return s7Error
+	return nil
 }
 
 //dataSize to number of byte accordingly

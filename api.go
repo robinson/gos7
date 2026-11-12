@@ -76,9 +76,9 @@ type Client interface {
 	//get CP info, return S7CpInfo and its properties
 	GetCPInfo() (info S7CpInfo, err error)
 	/*datetime*/
-	//read clock on PLC, return a time
+	//set the PLC clock to datetime (the name is historical and kept for compatibility)
 	PGClockRead(datetime time.Time) error
-	//write clock to PLC with datetime input
+	//read the PLC clock (the name is historical and kept for compatibility)
 	PGClockWrite() (dt time.Time, err error)
 	/***************end API AG***************/
 }

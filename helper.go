@@ -108,7 +108,8 @@ func (s7 *Helper) SetDateTimeAt(buffer []byte, pos int, value time.Time) {
 	buffer[pos+4] = encodeBcd(mi)
 	buffer[pos+5] = encodeBcd(s)
 	buffer[pos+6] = encodeBcd(value.Nanosecond() / 1000000 / 10)
-	buffer[pos+7] = (encodeBcd(value.Nanosecond()/1000000%10) << 4) | encodeBcd(int(value.Weekday()))
+	// S7 counts the day of week from 1 (Sunday) to 7 (Saturday), time.Weekday from 0.
+	buffer[pos+7] = (encodeBcd(value.Nanosecond()/1000000%10) << 4) | encodeBcd(int(value.Weekday())+1)
 }
 
 //GetDateAt DATE (S7 DATE)
@@ -181,7 +182,7 @@ func (s7 *Helper) SetDTLAt(buffer []byte, pos int, value time.Time) []byte {
 	s7.SetValueAt(buffer, pos, year)
 	buffer[pos+2] = byte(value.Month())
 	buffer[pos+3] = byte(value.Day())
-	buffer[pos+4] = byte(value.Weekday())
+	buffer[pos+4] = byte(value.Weekday()) + 1 // 1 = Sunday ... 7 = Saturday
 	buffer[pos+5] = byte(value.Hour())
 	buffer[pos+6] = byte(value.Minute())
 	buffer[pos+7] = byte(value.Second())

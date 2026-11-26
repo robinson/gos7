@@ -219,13 +219,20 @@ func (mb *tcpTransporter) ConnectContext(ctx context.Context) error {
 	//second stage: ISOTCP (ISO 8073) Connection
 	err = mb.isoConnect()
 	if err != nil {
-		if mb.conn != nil {
-			_ = mb.conn.Close()
-		}
+		_ = mb.Close()
 		return err
 	}
 	// Third stage : S7 protocol data unit negotiation
-	return mb.negotiatePduLength()
+	// A failed negotiation must not leave the socket behind either: a peer
+	// that accepts TCP and confirms the ISO connection but never answers the
+	// setup request (a PPI bridge whose serial side hangs) would otherwise
+	// hold one session per attempt until the idle timer closes it. Close()
+	// also resets conn, so a retry on the same handler dials again.
+	if err = mb.negotiatePduLength(); err != nil {
+		_ = mb.Close()
+		return err
+	}
+	return nil
 }
 
 func (mb *tcpTransporter) tcpConnect(ctx context.Context) error {
